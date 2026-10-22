@@ -15,7 +15,7 @@ Comes before #4.
 
 1. **Restarting the app keeps what I was listening to.** Today a restart (by me, or Android killing the app) loses the queue, the track and the position, and I have to find the album or playlist again.
 2. **Option: "On reopen, continue playing the last thing".** When on, the app starts playing that queue at the saved track and position as soon as it opens. When off, the app only offers it (it is there, one tap to play).
-3. **A recently played list, newest first by default.** Whatever I played last (album, playlist, track) at the top, without picking a sort order every time.
+3. **A recently played list, newest first by default.** Everything I started, mixed in one list: mostly **albums and playlists**, **tracks** too (a single track I played). Newest at the top, without picking a sort order every time. Filters for *All / Albums / Playlists / Tracks*.
 
 ## Today
 
@@ -32,9 +32,9 @@ Comes before #4.
 - **3: a web client view** (jellyfin-web, served by the server), unless the app adds its own screen. Options:
   - a. Show the full *Recently played* list (the Suggestions row's "more"), sorted by `DatePlayed` descending.
   - b. Recently played *albums and playlists*: the server has no "last played" date for an album. It could be derived from its tracks' dates (query played tracks by `DatePlayed` descending, group by album), or the app could keep its own history of what it started (album or playlist ID + date), which is simpler and knows about playlists too.
-  - Whether this is about tracks or about albums/playlists is still to be decided.
+  - **Decided (2026-10-22): all of them.** The app keeps its own history of what was *started*: an album, a playlist, or a single track. When a track list is started from inside an album (all tracks share one album), it counts as the album. Tracks that follow each other on their own are not history.
 
 ## Next steps
 
 1. Build 1 + 2 in the app: save the queue, restore it on reopen, add the setting. Check with the diagnostic log that a killed app (swipe away, then reopen) comes back at the right track and position.
-2. Decide what "recently played" lists (tracks, or albums/playlists) and where it lives (web view or app screen).
+2. Build the history and a *Recently played* screen in the app, opened from the web client's side menu. *Continue* (the saved queue) sits at the top.
