@@ -92,7 +92,7 @@ jobs:
 
           Built from [\`build\`](https://github.com/${{ github.repository }}/tree/$commit) @ \`${commit:0:8}\` by [this run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           EOF
-          gh release create "v$VERSION" "../out/jellyfin-$VERSION.apk" --target "$commit" --title "$VERSION" --notes-file "$RUNNER_TEMP/notes.md"
+          gh release create -R ${{ github.repository }} "v$VERSION" "../out/jellyfin-$VERSION.apk" --target "$commit" --title "$VERSION" --notes-file "$RUNNER_TEMP/notes.md"
       - name: Report a failure
         if: failure()
         run: |

@@ -55,14 +55,14 @@ to_docker() { if command -v cygpath >/dev/null; then cygpath -m "$1"; else echo 
 if [ ! -f "$BUILD/jelly-local.keystore" ]; then
   MSYS_NO_PATHCONV=1 docker run --rm -v "$(to_docker "$BUILD"):/keys" "$IMAGE" \
     keytool -genkeypair -keystore /keys/jelly-local.keystore -storepass jellylocal -keypass jellylocal \
-      -alias jelly -keyalg RSA -keysize 4096 -validity 36500 -dname "CN=Jellyfin local build"
+      -alias fork-release-key -keyalg RSA -keysize 4096 -validity 36500 -dname "CN=Jellyfin local build"
 fi
 
 MSYS_NO_PATHCONV=1 docker run --rm \
   -v "$(to_docker "$REPO"):/src" -v "$(to_docker "$BUILD"):/keys" \
   -v jf-gradle-cache:/root/.gradle -v jf-sdk:/opt/android-sdk/platforms \
   -e KEYSTORE_FILE=/keys/jelly-local.keystore -e KEYSTORE_PASSWORD=jellylocal \
-  -e SIGNING_KEY_ALIAS=jelly -e SIGNING_KEY_PASSWORD=jellylocal \
+  -e SIGNING_KEY_ALIAS=fork-release-key -e SIGNING_KEY_PASSWORD=jellylocal \
   -e JELLYFIN_VERSION="$VERSION" \
   "$IMAGE" ./gradlew --no-daemon -q assembleProprietaryRelease
 

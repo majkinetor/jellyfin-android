@@ -1,3 +1,4 @@
 jellyfin-android/
 out/
 build/*.keystore
+dev/.github-credentials.json

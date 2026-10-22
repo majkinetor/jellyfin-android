@@ -2,6 +2,8 @@
 
 Fixes and additions to [jellyfin-android](https://github.com/jellyfin/jellyfin-android), kept in the fork **[majkinetor/jellyfin-android](https://github.com/majkinetor/jellyfin-android)** and used daily on the owner's phone (Honor Magic V5, MagicOS, Android 15). Some may go upstream later.
 
+**Read [`dev/agents/AGENTS.general.md`](dev/agents/AGENTS.general.md) first, every session.** It holds the owner's rules for any project (authority, how much to do alone, GitHub work, testing), copied unchanged from his other repos; [`dev/agents/STANDARDS.general.md`](dev/agents/STANDARDS.general.md) has the numbered standards they link to. This file adds what is specific to this fork and wins where the two differ (see [Differences from the general rules](#differences-from-the-general-rules)).
+
 **Required reading before changing anything in `jellyfin-android/`: [UPSTREAM.md](UPSTREAM.md)**. It covers upstream's conventions, its LLM policy and how its maintainer applies it, and the PR checklist.
 - Follow those conventions on every branch, `own/*` included, so any of it can go upstream later.
 - **Code branches carry app code only.** Agent files, notes, analysis and scripts live here, on `meta`.
@@ -56,6 +58,14 @@ The commit messages here keep the AI trailers. An upstream PR is made from a fre
   - The official app has a different signature: it has to be uninstalled once, and store updates no longer apply.
 - `<n>` comes from `build/build-number` and counts up, so each build installs over the last one. Reset it to 0 when upstream tags a new release.
 - Git Bash mangles quotes and backslashes in inline scripts: write scripts to a file first. Every text file is LF (`core.autocrlf false` in the clone).
+
+## Differences from the general rules
+
+- **Bot identity** ([Standard 7](dev/agents/STANDARDS.general.md#standard-7)): the bot is **`claude-ai-milic`**, a collaborator on the fork. Its token goes in `dev/.github-credentials.json` here (gitignored), in the same format as in the owner's other repos; the owner puts it there. Until it is there, ask before any GitHub write instead of posting as the owner. CI posts as `github-actions[bot]`.
+- **Scripts are bash, not PowerShell** ([Standard 3](dev/agents/STANDARDS.general.md#standard-3)): `build/*.sh` run in Docker and on GitHub's Linux runners, and locally through Git Bash.
+- **Branches** ([Standard 13](dev/agents/STANDARDS.general.md#standard-13)): no work on `master` (it mirrors upstream); every change goes on a `fix/*` or `own/*` branch, merged into `build` (see [Branches](#branches-in-jellyfin-android-all-pushed-to-origin)).
+- **The model + effort footer** goes on every GitHub post here too: `<sub>Claude Opus 5.5 · effort: <label> (<value>)</sub>`, label from the value (5 low, 10 medium, 15 high, 40 extra, max is max).
+- **Upstream posts are never written by an agent** ([UPSTREAM.md](UPSTREAM.md)); the general rules about posting apply to the fork only.
 
 ## Debugging on the phone
 
