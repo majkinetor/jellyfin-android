@@ -19,7 +19,7 @@ import timber.log.Timber
  *
  * The web player's audio stream lives inside the WebView; when the audio mode or routing changes under it
  * (voice input, voice messages, calls), it can end up "playing" without any sound until the app is restarted.
- * Pausing first lets the WebView close the stream, and resuming once the microphone is free opens a fresh one.
+ * Pausing first keeps the stream out of the switch, and resuming once the route has settled opens a fresh one.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 class MicrophoneWatcher(
@@ -73,15 +73,58 @@ class MicrophoneWatcher(
         }
     }
 
-    private val resumeRunnable = Runnable {
-        if (!busy && pausedByUs) {
+    private var busyEndedAt = 0L
+    private var freeSince = 0L
+    private var settledSince = 0L
+    private var lastRoute = ""
+
+    /**
+     * Checked every [POLL_MS] once the microphone is free: resumes when the audio route has settled,
+     * that is no call mode and no Bluetooth headset (SCO) link, for [SETTLE_MS]. A Bluetooth headset
+     * keeps its telephone link a while after the microphone is released, and music started on it
+     * sounds like a phone call and breaks when the headset switches back.
+     */
+    private val resumeRunnable = object : Runnable {
+        override fun run() {
+            if (busy || !pausedByUs) return
+            val now = SystemClock.elapsedRealtime()
+            val route = routeState()
+            if (route != lastRoute) {
+                Timber.tag(TAG).i("route: %s", route)
+                lastRoute = route
+            }
+            if (route.isNotEmpty()) settledSince = 0L else if (settledSince == 0L) settledSince = now
+            val settled = settledSince != 0L && now - settledSince >= SETTLE_MS
+            val waitedTooLong = now - freeSince >= MAX_WAIT_MS
+            if (!settled && !waitedTooLong) {
+                handler.postDelayed(this, POLL_MS)
+                return
+            }
             pausedByUs = false
             if (!isPlaying()) {
-                Timber.tag(TAG).i("microphone free, resuming")
+                Timber.tag(TAG).i("microphone free, resuming%s", if (settled) "" else " (route never settled)")
                 play()
             }
         }
     }
+
+    /** What still holds the audio route for a call, empty when nothing does. */
+    @Suppress("DEPRECATION")
+    private fun routeState(): String {
+        val holders = mutableListOf<String>()
+        if (audioManager.mode != AudioManager.MODE_NORMAL) holders += "mode ${modeName(audioManager.mode)}"
+        if (audioManager.isBluetoothScoOn) holders += "bluetooth sco"
+        if (AndroidVersion.isAtLeastS) {
+            val type = audioManager.communicationDevice?.type
+            if (type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO || type == AudioDeviceInfo.TYPE_BLE_HEADSET) {
+                holders += "communication device $type"
+            }
+        }
+        return holders.joinToString()
+    }
+
+    /** True while the microphone is in use and for a while after, when headsets drop their call link. */
+    fun recentlyBusy(): Boolean = busy || SystemClock.elapsedRealtime() - busyEndedAt < RECENTLY_BUSY_MS
 
     fun start() {
         if (started) return
@@ -158,12 +201,15 @@ class MicrophoneWatcher(
                 pausedByUs = true
                 pausedAt = stoppedPlayingAt
             }
-        } else if (pausedByUs) {
-            // Keep the player paused long enough for the WebView to close its audio stream
-            val pausedFor = SystemClock.elapsedRealtime() - pausedAt
-            val delay = maxOf(RESUME_DELAY_MS, MIN_PAUSE_MS - pausedFor)
-            Timber.tag(TAG).i("microphone free, resuming in %d ms", delay)
-            handler.postDelayed(resumeRunnable, delay)
+        } else {
+            busyEndedAt = SystemClock.elapsedRealtime()
+            if (pausedByUs) {
+                Timber.tag(TAG).i("microphone free, waiting for the audio route to settle")
+                freeSince = busyEndedAt
+                settledSince = 0L
+                lastRoute = ""
+                handler.post(resumeRunnable)
+            }
         }
     }
 
@@ -191,8 +237,10 @@ class MicrophoneWatcher(
     companion object {
         private const val TAG = "JellyfinAudio"
         private const val PAUSE_SETTLE_MS = 2000L
-        private const val RESUME_DELAY_MS = 1000L
-        private const val MIN_PAUSE_MS = 6000L
+        private const val POLL_MS = 500L
+        private const val SETTLE_MS = 1000L
+        private const val MAX_WAIT_MS = 15_000L
+        private const val RECENTLY_BUSY_MS = 20_000L
         private const val FOCUS_PAUSE_WINDOW_MS = 1500L
     }
 }
