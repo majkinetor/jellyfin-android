@@ -54,6 +54,7 @@ import org.jellyfin.sdk.api.client.util.AuthorizationHeaderBuilder
 import org.koin.android.ext.koin.androidApplication
 import org.koin.androidx.fragment.dsl.fragment
 import org.koin.core.module.dsl.viewModel
+import org.jellyfin.mobile.history.PlayHistory
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import java.io.File
@@ -63,6 +64,7 @@ private const val TS_SEARCH_PACKETS = 1800
 
 val applicationModule = module {
     single { AppPreferences(androidApplication()) }
+    single { PlayHistory(androidApplication()) }
     single { OkHttpClient() }
     single { ImageLoader(androidApplication()) }
     single { PermissionRequestHelper() }
