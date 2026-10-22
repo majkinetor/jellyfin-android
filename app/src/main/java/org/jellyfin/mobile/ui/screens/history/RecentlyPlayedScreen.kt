@@ -58,33 +58,12 @@ import org.jellyfin.mobile.R
 import org.jellyfin.mobile.history.ContinueState
 import org.jellyfin.mobile.history.HistoryEntry
 
-/** What the screen asks of its host. */
-interface RecentlyPlayedActions {
-    fun imageUrl(itemId: String): String?
-    fun onContinue()
-    fun onPlay(entry: HistoryEntry)
-    fun onRemove(entry: HistoryEntry)
-    fun onClear()
-    fun onBack()
-}
-
 private enum class Filter(@StringRes val label: Int, val kinds: Set<String>?) {
     ALL(R.string.recently_played_filter_all, null),
     ALBUMS(R.string.recently_played_filter_albums, setOf("album")),
     PLAYLISTS(R.string.recently_played_filter_playlists, setOf("playlist")),
     TRACKS(R.string.recently_played_filter_tracks, setOf("track")),
     OTHER(R.string.recently_played_filter_other, setOf("artist", "genre", "folder")),
-}
-
-@StringRes
-private fun kindLabel(kind: String): Int? = when (kind) {
-    "album" -> R.string.recently_played_kind_album
-    "playlist" -> R.string.recently_played_kind_playlist
-    "track" -> R.string.recently_played_kind_track
-    "artist" -> R.string.recently_played_kind_artist
-    "genre" -> R.string.recently_played_kind_genre
-    "folder" -> R.string.recently_played_kind_folder
-    else -> null
 }
 
 @Composable
@@ -340,9 +319,4 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
     )
-}
-
-private fun relativeTime(time: Long): String = when {
-    time <= 0 -> ""
-    else -> DateUtils.getRelativeTimeSpanString(time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
 }
