@@ -13,7 +13,7 @@ END='<!-- differences:end -->'
 
 block="$(gh issue list -R "$FORK" --state all --limit 500 --json number,title,body,labels,stateReason \
   --jq 'map(select(any(.labels[]; .name == "status: testing" or .name == "status: done")
-                   and .stateReason != "NOT_PLANNED"))
+                   and (.stateReason // "" | ascii_upcase) != "NOT_PLANNED"))
         | sort_by(.number)[]
         | (.body | capture("^\\*\\*Upstream:\\*\\* (?<upstream>[^\r\n]*?) *\r?\n\\*\\*This fork:\\*\\* (?<fork>[^\r\n]*?) *(\r?\n|$)")) as $lead
         | "### [\(.title)](https://github.com/'"$FORK"'/issues/\(.number))\n\n"

@@ -19,7 +19,7 @@ EOF
 # One line per issue: day, section, number, title (tab separated, newest first)
 gh issue list -R "$FORK" --state closed --label 'status: done' --limit 500 \
   --json number,title,closedAt,stateReason,labels \
-  --jq '.[] | select(.stateReason == "COMPLETED")
+  --jq '.[] | select((.stateReason // "" | ascii_upcase) != "NOT_PLANNED")
         | [ .closedAt[:10],
             (if any(.labels[]; .name == "bug") then "1 Fixes"
              elif any(.labels[]; .name == "feature" or .name == "server") then "2 Features"
