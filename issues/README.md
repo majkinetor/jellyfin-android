@@ -12,7 +12,7 @@ A finished issue stays here with `status: done`; its body is ready to paste into
 
 | #   | Title                                                                 | Status  | Branch              |
 | --- | --------------------------------------------------------------------- | ------- | ------------------- |
-| 1   | [Silent "playing" after microphone use](001-mic-silence.md)           | testing | fix/mic-silence     |
+| 1   | [Silent "playing" after microphone use](001-mic-silence.md)           | done    | fix/mic-silence     |
 | 2   | [Album from thumbnail stays paused](002-autoplay-paused.md)           | done    | fix/autoplay-paused |
 | 3   | [Diagnostic log in the app](003-diagnostic-log.md)                    | done    | own/diagnostic-log  |
 | 4   | [File system playlist support](004-filesystem-playlists.md)           | open    | — (server / web)    |
