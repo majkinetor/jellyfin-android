@@ -102,9 +102,9 @@ class SettingsFragment : Fragment(), BackPressInterceptor {
             summaryOnRes = R.string.pref_music_notification_always_dismissible_summary_on
         }
         checkBox(Constants.PREF_CONTINUE_ON_REOPEN) {
-            title = "On reopen, continue playing the last thing"
-            summary = "The queue is kept either way: Recently played → Continue"
-            summaryOn = "Starts the last queue at its track and position when the app opens"
+            titleRes = R.string.pref_continue_on_reopen_title
+            summaryRes = R.string.pref_continue_on_reopen_summary_off
+            summaryOnRes = R.string.pref_continue_on_reopen_summary_on
         }
         categoryHeader(PREF_CATEGORY_VIDEO_PLAYER) {
             titleRes = R.string.pref_category_video_player

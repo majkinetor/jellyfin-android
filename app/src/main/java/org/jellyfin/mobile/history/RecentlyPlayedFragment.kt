@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import org.jellyfin.mobile.ui.ComposeFragment
+import org.jellyfin.mobile.ui.screens.history.RecentlyPlayedActions
 import org.jellyfin.mobile.ui.screens.history.RecentlyPlayedScreen
 import org.jellyfin.mobile.webapp.WebappFunctionChannel
 import org.jellyfin.sdk.api.client.ApiClient
@@ -22,28 +23,35 @@ class RecentlyPlayedFragment : ComposeFragment() {
         RecentlyPlayedScreen(
             entries = entries,
             continueState = continueState,
-            imageUrl = { itemId -> imageUrl(itemId) },
-            onContinue = {
-                webappFunctionChannel.call("window.ContinuePlugin && window.ContinuePlugin.resume(true);")
-                close()
-            },
-            onPlay = { entry ->
-                // IDs are hex; anything else is not put into a script
-                if (entry.id.matches(ITEM_ID)) {
-                    webappFunctionChannel.call("window.ContinuePlugin && window.ContinuePlugin.playEntry('${entry.id}');")
-                }
-                close()
-            },
-            onRemove = { entry -> playHistory.remove(entry.id) },
-            onClear = { playHistory.clear() },
-            onBackPressed = { close() },
+            actions = actions,
         )
     }
 
-    private fun imageUrl(itemId: String): String? {
-        val baseUrl = apiClient.baseUrl ?: return null
-        if (itemId.isEmpty()) return null
-        return "$baseUrl/Items/$itemId/Images/Primary?fillHeight=160&fillWidth=160&quality=90"
+    private val actions = object : RecentlyPlayedActions {
+        override fun imageUrl(itemId: String): String? {
+            val baseUrl = apiClient.baseUrl
+            if (baseUrl == null || itemId.isEmpty()) return null
+            return "$baseUrl/Items/$itemId/Images/Primary?fillHeight=160&fillWidth=160&quality=90"
+        }
+
+        override fun onContinue() {
+            webappFunctionChannel.call("window.ContinuePlugin && window.ContinuePlugin.resume(true);")
+            close()
+        }
+
+        override fun onPlay(entry: HistoryEntry) {
+            // IDs are hex; anything else is not put into a script
+            if (entry.id.matches(ITEM_ID)) {
+                webappFunctionChannel.call("window.ContinuePlugin && window.ContinuePlugin.playEntry('${entry.id}');")
+            }
+            close()
+        }
+
+        override fun onRemove(entry: HistoryEntry) = playHistory.remove(entry.id)
+
+        override fun onClear() = playHistory.clear()
+
+        override fun onBack() = close()
     }
 
     private fun close() {
