@@ -4,13 +4,14 @@
  * State and history are stored by the app (NativeInterface), not in the page.
  */
 export class ContinuePlugin {
-    constructor({ events, playbackManager }) {
+    constructor({ events, playbackManager, globalize }) {
         window['ContinuePlugin'] = this;
 
         this.name = 'ContinuePlugin';
 
         this.events = events;
         this.playbackManager = playbackManager;
+        this.globalize = globalize;
         this.restoring = false;
         this.lastSaved = '';
 
@@ -210,7 +211,7 @@ export class ContinuePlugin {
             link.className = 'navMenuOption lnkMediaFolder lnkRecentlyPlayed';
             link.href = '#';
             link.innerHTML = '<span class="material-icons navMenuOptionIcon history" aria-hidden="true"></span>'
-                + '<span class="navMenuOptionText">Recently played</span>';
+                + `<span class="navMenuOptionText">${this.globalize.translate('HeaderRecentlyPlayed')}</span>`;
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 window.NativeInterface.openRecentlyPlayed();

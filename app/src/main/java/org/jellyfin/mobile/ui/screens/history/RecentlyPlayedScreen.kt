@@ -1,6 +1,7 @@
 package org.jellyfin.mobile.ui.screens.history
 
 import android.text.format.DateUtils
+import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,60 +48,64 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import org.jellyfin.mobile.R
 import org.jellyfin.mobile.history.ContinueState
 import org.jellyfin.mobile.history.HistoryEntry
 
-private enum class Filter(val label: String, val kinds: Set<String>?) {
-    ALL("All", null),
-    ALBUMS("Albums", setOf("album")),
-    PLAYLISTS("Playlists", setOf("playlist")),
-    TRACKS("Tracks", setOf("track")),
-    OTHER("Other", setOf("artist", "genre", "folder")),
+/** What the screen asks of its host. */
+interface RecentlyPlayedActions {
+    fun imageUrl(itemId: String): String?
+    fun onContinue()
+    fun onPlay(entry: HistoryEntry)
+    fun onRemove(entry: HistoryEntry)
+    fun onClear()
+    fun onBack()
 }
 
-private fun kindLabel(kind: String) = when (kind) {
-    "album" -> "Album"
-    "playlist" -> "Playlist"
-    "track" -> "Track"
-    "artist" -> "Artist"
-    "genre" -> "Genre"
-    "folder" -> "Folder"
-    else -> kind
+private enum class Filter(@StringRes val label: Int, val kinds: Set<String>?) {
+    ALL(R.string.recently_played_filter_all, null),
+    ALBUMS(R.string.recently_played_filter_albums, setOf("album")),
+    PLAYLISTS(R.string.recently_played_filter_playlists, setOf("playlist")),
+    TRACKS(R.string.recently_played_filter_tracks, setOf("track")),
+    OTHER(R.string.recently_played_filter_other, setOf("artist", "genre", "folder")),
+}
+
+@StringRes
+private fun kindLabel(kind: String): Int? = when (kind) {
+    "album" -> R.string.recently_played_kind_album
+    "playlist" -> R.string.recently_played_kind_playlist
+    "track" -> R.string.recently_played_kind_track
+    "artist" -> R.string.recently_played_kind_artist
+    "genre" -> R.string.recently_played_kind_genre
+    "folder" -> R.string.recently_played_kind_folder
+    else -> null
 }
 
 @Composable
 fun RecentlyPlayedScreen(
     entries: List<HistoryEntry>,
     continueState: ContinueState?,
-    imageUrl: (String) -> String?,
-    onContinue: () -> Unit,
-    onPlay: (HistoryEntry) -> Unit,
-    onRemove: (HistoryEntry) -> Unit,
-    onClear: () -> Unit,
-    onBackPressed: () -> Unit,
+    actions: RecentlyPlayedActions,
 ) {
     var filter by rememberSaveable { mutableStateOf(Filter.ALL) }
-    var showMenu by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
     val shown = remember(entries, filter) {
         filter.kinds?.let { kinds -> entries.filter { it.kind in kinds } } ?: entries
     }
 
     if (confirmClear) {
-        AlertDialog(
-            onDismissRequest = { confirmClear = false },
-            title = { Text("Clear history?") },
-            text = { Text("Removes every entry from Recently played. The saved queue stays.") },
-            confirmButton = {
-                TextButton(onClick = { onClear(); confirmClear = false }) { Text("Clear") }
+        ClearHistoryDialog(
+            onConfirm = {
+                actions.onClear()
+                confirmClear = false
             },
-            dismissButton = {
-                TextButton(onClick = { confirmClear = false }) { Text("Cancel") }
-            },
+            onDismiss = { confirmClear = false },
         )
     }
 
@@ -108,29 +113,7 @@ fun RecentlyPlayedScreen(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding(),
-        topBar = {
-            TopAppBar(
-                title = { Text("Recently played") },
-                navigationIcon = {
-                    IconButton(onClick = onBackPressed) {
-                        Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "More")
-                        }
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(onClick = { showMenu = false; confirmClear = true }) {
-                                Text("Clear history")
-                            }
-                        }
-                    }
-                },
-                backgroundColor = Color.Transparent,
-            )
-        },
+        topBar = { RecentlyPlayedTopBar(onBack = actions::onBack, onClear = { confirmClear = true }) },
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -139,40 +122,96 @@ fun RecentlyPlayedScreen(
         ) {
             if (continueState != null) {
                 item(key = "continue") {
-                    ContinueCard(continueState, imageUrl, onContinue)
+                    ContinueCard(continueState, actions)
                 }
             }
             item(key = "filters") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Filter.entries.forEach { option ->
-                        FilterChip(label = option.label, selected = option == filter) { filter = option }
-                    }
-                }
+                FilterRow(selected = filter, onSelect = { filter = it })
             }
             if (shown.isEmpty()) {
                 item(key = "empty") {
+                    val message = if (entries.isEmpty()) R.string.recently_played_empty else R.string.recently_played_empty_filter
                     Text(
-                        text = if (entries.isEmpty()) "Nothing played yet" else "Nothing of this kind played yet",
+                        text = stringResource(message),
                         style = MaterialTheme.typography.body2,
                         modifier = Modifier.padding(24.dp),
                     )
                 }
             }
             items(shown, key = { it.id }) { entry ->
-                HistoryRow(entry, imageUrl, onPlay, onRemove)
+                HistoryRow(entry, actions)
             }
         }
     }
 }
 
 @Composable
-private fun ContinueCard(state: ContinueState, imageUrl: (String) -> String?, onContinue: () -> Unit) {
+private fun RecentlyPlayedTopBar(onBack: () -> Unit, onClear: () -> Unit) {
+    var showMenu by remember { mutableStateOf(false) }
+    TopAppBar(
+        title = { Text(text = stringResource(R.string.recently_played)) },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null)
+            }
+        },
+        actions = {
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = null)
+                }
+                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    DropdownMenuItem(
+                        onClick = {
+                            showMenu = false
+                            onClear()
+                        },
+                    ) {
+                        Text(text = stringResource(R.string.recently_played_clear))
+                    }
+                }
+            }
+        },
+        backgroundColor = Color.Transparent,
+    )
+}
+
+@Composable
+private fun ClearHistoryDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.recently_played_clear_confirm_title)) },
+        text = { Text(text = stringResource(R.string.recently_played_clear_confirm_message)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(text = stringResource(R.string.recently_played_clear_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(android.R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun FilterRow(selected: Filter, onSelect: (Filter) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Filter.entries.forEach { option ->
+            FilterChip(label = stringResource(option.label), selected = option == selected) { onSelect(option) }
+        }
+    }
+}
+
+@Composable
+private fun ContinueCard(state: ContinueState, actions: RecentlyPlayedActions) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -183,10 +222,10 @@ private fun ContinueCard(state: ContinueState, imageUrl: (String) -> String?, on
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Cover(imageUrl(state.imageId), size = 64)
+            Cover(actions.imageUrl(state.imageId), size = 64.dp)
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Continue", style = MaterialTheme.typography.overline)
+                Text(text = stringResource(R.string.recently_played_continue), style = MaterialTheme.typography.overline)
                 Text(
                     text = state.name,
                     style = MaterialTheme.typography.subtitle1,
@@ -194,40 +233,35 @@ private fun ContinueCard(state: ContinueState, imageUrl: (String) -> String?, on
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                val details = listOf(state.subtitle, state.album).filter { it.isNotEmpty() }.joinToString(" · ")
-                if (details.isNotEmpty()) {
-                    Text(text = details, style = MaterialTheme.typography.body2, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+                SingleLine(listOf(state.subtitle, state.album).filter { it.isNotEmpty() }.joinToString(" · "))
+                val position = DateUtils.formatElapsedTime(state.positionMs / DateUtils.SECOND_IN_MILLIS)
                 Text(
-                    text = "Track ${state.index + 1} of ${state.ids.size} · ${formatPosition(state.positionMs)} · " +
-                        relativeTime(state.savedAt),
+                    text = stringResource(R.string.recently_played_track_position, state.index + 1, state.ids.size, position) +
+                        " · " + relativeTime(state.savedAt),
                     style = MaterialTheme.typography.caption,
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = onContinue) { Text("Play") }
+            Button(onClick = actions::onContinue) {
+                Text(text = stringResource(R.string.recently_played_play))
+            }
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun HistoryRow(
-    entry: HistoryEntry,
-    imageUrl: (String) -> String?,
-    onPlay: (HistoryEntry) -> Unit,
-    onRemove: (HistoryEntry) -> Unit,
-) {
+private fun HistoryRow(entry: HistoryEntry, actions: RecentlyPlayedActions) {
     var showMenu by remember { mutableStateOf(false) }
     Box {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .combinedClickable(onClick = { onPlay(entry) }, onLongClick = { showMenu = true })
+                .combinedClickable(onClick = { actions.onPlay(entry) }, onLongClick = { showMenu = true })
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Cover(imageUrl(entry.imageId), size = 56)
+            Cover(actions.imageUrl(entry.imageId), size = 56.dp)
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -236,27 +270,47 @@ private fun HistoryRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                val details = listOf(kindLabel(entry.kind), entry.subtitle).filter { it.isNotEmpty() }.joinToString(" · ")
-                Text(text = details, style = MaterialTheme.typography.body2, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val kind = kindLabel(entry.kind)?.let { stringResource(it) } ?: entry.kind
+                SingleLine(listOf(kind, entry.subtitle).filter { it.isNotEmpty() }.joinToString(" · "))
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = relativeTime(entry.playedAt), style = MaterialTheme.typography.caption)
         }
         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-            DropdownMenuItem(onClick = { showMenu = false; onPlay(entry) }) { Text("Play") }
-            DropdownMenuItem(onClick = { showMenu = false; onRemove(entry) }) { Text("Remove from history") }
+            DropdownMenuItem(
+                onClick = {
+                    showMenu = false
+                    actions.onPlay(entry)
+                },
+            ) {
+                Text(text = stringResource(R.string.recently_played_play))
+            }
+            DropdownMenuItem(
+                onClick = {
+                    showMenu = false
+                    actions.onRemove(entry)
+                },
+            ) {
+                Text(text = stringResource(R.string.recently_played_remove))
+            }
         }
     }
 }
 
 @Composable
-private fun Cover(url: String?, size: Int) {
+private fun SingleLine(text: String) {
+    if (text.isEmpty()) return
+    Text(text = text, style = MaterialTheme.typography.body2, maxLines = 1, overflow = TextOverflow.Ellipsis)
+}
+
+@Composable
+private fun Cover(url: String?, size: Dp) {
     AsyncImage(
         model = url,
         contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = Modifier
-            .size(size.dp)
+            .size(size)
             .clip(RoundedCornerShape(4.dp))
             .background(MaterialTheme.colors.onSurface.copy(alpha = 0.08f)),
     )
@@ -277,10 +331,7 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     )
 }
 
-private fun formatPosition(ms: Long): String {
-    val seconds = ms / 1000
-    return "%d:%02d".format(seconds / 60, seconds % 60)
+private fun relativeTime(time: Long): String = when {
+    time <= 0 -> ""
+    else -> DateUtils.getRelativeTimeSpanString(time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
 }
-
-private fun relativeTime(time: Long): String =
-    if (time <= 0) "" else DateUtils.getRelativeTimeSpanString(time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
