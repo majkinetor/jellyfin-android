@@ -16,6 +16,8 @@ My playlists are files (`.m3u8`, `.pls`, …) in a folder, `M:\audio\playlists`.
 1. Show up under **Playlists** like Jellyfin's own playlists, without going through the folder view.
 2. Be fully manageable from Jellyfin: create, rename, add/remove/reorder tracks, delete. Each change writes back to the file.
 
+**Not wanted: Jellyfin's internal playlists** (the ones the server keeps in its SQLite database). The files are the only source of truth. A **New Playlist** (and *Add to playlist*) should make or change a file in the playlist folder, never an internal playlist. Ideally internal playlists can be hidden or switched off altogether.
+
 ## Today
 
 - The folder is added as a library: **My Playlists**, type *Music*.
@@ -36,5 +38,6 @@ The Jellyfin **server** (`jellyfin/jellyfin`), and maybe **jellyfin-web**. Not t
 ## Next steps
 
 1. Find why `/Items?IncludeItemTypes=Playlist` leaves out file playlists: query the server directly, then read `ItemsController` and `Playlist.IsVisible`.
-2. Try the existing edit paths on one file playlist (add a track, remove one, reorder) and see what changes in the `.m3u8` file.
-3. Search upstream issues and feature requests (features.jellyfin.org) before writing a fix.
+2. Find where *New Playlist* decides to make an internal playlist (`PlaylistManager.CreatePlaylist`, which always makes an internal one). A setting could point it at a library folder and a format (`.m3u8`) instead.
+3. Try the existing edit paths on one file playlist (add a track, remove one, reorder) and see what changes in the `.m3u8` file.
+4. Search upstream issues and feature requests (features.jellyfin.org) before writing a fix.
