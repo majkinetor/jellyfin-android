@@ -1,7 +1,7 @@
 ---
 id: 1
 title: Web player keeps "playing" without sound after the microphone is used
-status: done
+status: testing
 branch: fix/mic-silence
 upstream: not reported yet (related to jellyfin/jellyfin-android#2203)
 created: 2026-10-22
@@ -57,3 +57,17 @@ It also logs recording, audio-mode, player and device changes under the `Jellyfi
 2026-10-22: first tests on the phone (build `2.7.3-local.1`) are positive. Resolved. Staying in daily use for a week or two before it goes upstream.
 
 Observed: using the microphone pauses the music, and it carries on once the microphone is free. This is the intended behaviour.
+
+### Recorder doesn't resume (fixed in 2.7.3-local.2)
+
+Viber, Claude dictation and Discord resumed; the built-in recorder didn't. The diagnostic log showed why:
+
+```
+14:05:29.162 WebView: .../Sessions/Playing/Progress     <- the web player reports a pause
+14:05:29.242 JellyfinAudio: recordings: 1 active [1]    <- the recorder opens the microphone 80 ms later
+14:05:30.671 JellyfinAudio: recordings: 0 active []     <- nothing resumes
+```
+
+Before it opens the microphone, the recorder asks for audio focus. The WebView (Chromium) pauses on that by itself, so when the recording starts the player is already paused. The watcher only resumed what it had paused itself.
+
+Fix: a pause reported up to 1.5 s before or after the microphone is taken also counts as caused by the microphone, so it resumes the same way. The voice apps don't take audio focus this way (sources 6 = `VOICE_RECOGNITION`, 7 = `VOICE_COMMUNICATION`); the recorder records from source 1 = `MIC`. The log now lists players as short usage names instead of full dumps.
