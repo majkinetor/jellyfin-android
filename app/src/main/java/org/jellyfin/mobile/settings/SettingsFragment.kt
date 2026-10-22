@@ -1,19 +1,13 @@
 package org.jellyfin.mobile.settings
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ScrollView
-import android.widget.TextView
-import android.widget.Toast
 import android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import de.Maxr1998.modernpreferences.Preference
 import de.Maxr1998.modernpreferences.PreferencesAdapter
@@ -33,10 +27,8 @@ import org.jellyfin.mobile.app.AppPreferences
 import org.jellyfin.mobile.app.StorageManager
 import org.jellyfin.mobile.databinding.FragmentSettingsBinding
 import org.jellyfin.mobile.downloads.DownloadMethod
-import org.jellyfin.mobile.utils.AndroidVersion
 import org.jellyfin.mobile.utils.BackPressInterceptor
 import org.jellyfin.mobile.utils.Constants
-import org.jellyfin.mobile.utils.DiagnosticLog
 import org.jellyfin.mobile.utils.applyWindowInsetsAsMargins
 import org.jellyfin.mobile.utils.extensions.requireMainActivity
 import org.jellyfin.mobile.utils.isPackageInstalled
@@ -298,51 +290,16 @@ class SettingsFragment : Fragment(), BackPressInterceptor {
             }
         }
         categoryHeader(PREF_CATEGORY_DIAGNOSTICS) {
-            title = "Diagnostics"
+            titleRes = R.string.pref_category_diagnostics
         }
         pref(PREF_DIAGNOSTIC_LOG) {
-            title = "Diagnostic log"
-            summary = "Show or share the app's log (audio, playback, web client)"
+            titleRes = R.string.pref_diagnostic_log_title
+            summaryRes = R.string.pref_diagnostic_log_summary
             onClick {
-                showDiagnosticLog()
+                DiagnosticLogDialog.show(requireContext())
                 false
             }
         }
-    }
-
-    private fun showDiagnosticLog() {
-        val context = requireContext()
-        val log = DiagnosticLog.read().ifEmpty { "(empty)" }
-        @Suppress("MagicNumber")
-        val text = TextView(context).apply {
-            // The newest lines are the interesting ones
-            this.text = if (log.length > 100_000) log.takeLast(100_000) else log
-            textSize = 11f
-            typeface = android.graphics.Typeface.MONOSPACE
-            setTextIsSelectable(true)
-            setPadding(32, 16, 32, 16)
-        }
-        val scroll = ScrollView(context).apply { addView(text) }
-        AlertDialog.Builder(context)
-            .setTitle("Diagnostic log")
-            .setView(scroll)
-            .setPositiveButton("Share") { _, _ ->
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_SUBJECT, "Jellyfin diagnostic log")
-                    putExtra(Intent.EXTRA_TEXT, DiagnosticLog.readForSharing(context))
-                }
-                startActivity(Intent.createChooser(intent, "Share log"))
-            }
-            .setNeutralButton("Clear") { _, _ -> DiagnosticLog.clear() }
-            .setNegativeButton("Copy") { _, _ ->
-                val clipboard = context.getSystemService(ClipboardManager::class.java)
-                clipboard.setPrimaryClip(ClipData.newPlainText("Jellyfin diagnostic log", DiagnosticLog.readForSharing(context)))
-                // Android 13+ confirms a copy itself
-                if (!AndroidVersion.isAtLeastT) Toast.makeText(context, "Log copied", Toast.LENGTH_SHORT).show()
-            }
-            .show()
-        scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
     }
 
     companion object {

@@ -37,7 +37,8 @@ object DiagnosticLog {
         val webView = WebViewCompat.getCurrentWebViewPackage(context)
         return buildString {
             appendLine("App: ${BuildConfig.APPLICATION_ID} ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
-            appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+            append("Device: ${Build.MANUFACTURER} ${Build.MODEL}, ")
+            appendLine("Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
             append("WebView: ${webView?.packageName} ${webView?.versionName}")
         }
     }

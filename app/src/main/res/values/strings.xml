@@ -180,4 +180,14 @@
     <string name="download_location_not_set_description">To download media, please select a folder where the files should be stored.</string>
     <string name="download_location_inaccessible">Download location inaccessible</string>
     <string name="download_location_inaccessible_description">The selected download location is no longer accessible. Please select a different folder to resume downloads.</string>
+    <string name="pref_category_diagnostics">Diagnostics</string>
+    <string name="pref_diagnostic_log_title">Diagnostic log</string>
+    <string name="pref_diagnostic_log_summary">Show, copy or share the app\'s log (audio, playback, web client)</string>
+    <string name="diagnostic_log_empty">The log is empty</string>
+    <string name="diagnostic_log_share">Share</string>
+    <string name="diagnostic_log_share_title">Share log</string>
+    <string name="diagnostic_log_copy">Copy</string>
+    <string name="diagnostic_log_copied">Log copied</string>
+    <string name="diagnostic_log_clear">Clear</string>
+    <string name="diagnostic_log_subject">Jellyfin diagnostic log</string>
 </resources>
