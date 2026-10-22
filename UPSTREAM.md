@@ -6,7 +6,7 @@
 
 Since 2026-05-31, 15 of the 34 closed unmerged PRs from people outside the project (bots not counted) were closed with one line: *"We won't be accepting this contribution as it violates our LLM/"AI" Development Policy."* The code is not reviewed first. Among them:
 
-- **#2238 "Allow WebView media playback without an additional user gesture"**: exactly the change in [issue 2](issues/002-autoplay-paused.md). It was rejected for the policy, not for the change.
+- **#2238 "Allow WebView media playback without an additional user gesture"**: exactly the change in [issue 2](https://github.com/majkinetor/jellyfin-android/issues/2). It was rejected for the policy, not for the change.
 - #2241 "Play downloaded music inside the app": a feature built in a Claude Code session, with a `Claude-Session:` line in the body.
 - #2224, #2176, #2222, #2229: AI-written bodies (headings like *Summary / Problem / Changes / Testing*, emoji, bullet walls), or "AI assistance" on a large feature.
 - #2200, a real one-line bug fix: *"Please write the PR description yourself per our LLM policy and fix your commit authorship."*
