@@ -1,10 +1,11 @@
 ---
 id: 1
 title: Web player keeps "playing" without sound after the microphone is used
-status: testing
+status: done
 branch: fix/mic-silence
 upstream: not reported yet (related to jellyfin/jellyfin-android#2203)
 created: 2026-10-22
+resolved: 2026-10-22
 ---
 
 # Web player keeps "playing" without sound after the microphone is used
@@ -50,3 +51,7 @@ It also logs recording, audio-mode, player and device changes under the `Jellyfi
 ## Test log
 
 <!-- Settings → Diagnostics → Diagnostic log → Share; paste the JellyfinAudio lines around the repro -->
+
+## Result
+
+2026-10-22: first tests on the phone (build `2.7.3-local.1`) are positive. Resolved. Staying in daily use for a week or two before it goes upstream.

@@ -1,10 +1,11 @@
 ---
 id: 2
 title: Album started from its thumbnail stays paused when the server is slow to answer
-status: testing
+status: done
 branch: fix/autoplay-paused
 upstream: not reported yet
 created: 2026-10-22
+resolved: 2026-10-22
 ---
 
 # Album started from its thumbnail stays paused when the server is slow to answer
@@ -38,3 +39,7 @@ fun WebSettings.applyDefault() {
 ```
 
 The page is the app's own web client. The app already advertises the `htmlaudioautoplay` / `htmlvideoautoplay` features, so allowing autoplay matches what it says it supports.
+
+## Result
+
+2026-10-22: first tests on the phone (build `2.7.3-local.1`) are positive. Resolved. Staying in daily use for a week or two before it goes upstream.
