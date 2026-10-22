@@ -130,7 +130,10 @@ fun RecentlyPlayedScreen(
             }
             if (shown.isEmpty()) {
                 item(key = "empty") {
-                    val message = if (entries.isEmpty()) R.string.recently_played_empty else R.string.recently_played_empty_filter
+                    val message = when {
+                        entries.isEmpty() -> R.string.recently_played_empty
+                        else -> R.string.recently_played_empty_filter
+                    }
                     Text(
                         text = stringResource(message),
                         style = MaterialTheme.typography.body2,
@@ -225,7 +228,10 @@ private fun ContinueCard(state: ContinueState, actions: RecentlyPlayedActions) {
             Cover(actions.imageUrl(state.imageId), size = 64.dp)
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = stringResource(R.string.recently_played_continue), style = MaterialTheme.typography.overline)
+                Text(
+                    text = stringResource(R.string.recently_played_continue),
+                    style = MaterialTheme.typography.overline,
+                )
                 Text(
                     text = state.name,
                     style = MaterialTheme.typography.subtitle1,
@@ -235,9 +241,9 @@ private fun ContinueCard(state: ContinueState, actions: RecentlyPlayedActions) {
                 )
                 SingleLine(listOf(state.subtitle, state.album).filter { it.isNotEmpty() }.joinToString(" · "))
                 val position = DateUtils.formatElapsedTime(state.positionMs / DateUtils.SECOND_IN_MILLIS)
+                val track = stringResource(R.string.recently_played_track_position, state.index + 1, state.ids.size, position)
                 Text(
-                    text = stringResource(R.string.recently_played_track_position, state.index + 1, state.ids.size, position) +
-                        " · " + relativeTime(state.savedAt),
+                    text = "$track · ${relativeTime(state.savedAt)}",
                     style = MaterialTheme.typography.caption,
                 )
             }
