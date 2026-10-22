@@ -241,7 +241,12 @@ private fun ContinueCard(state: ContinueState, actions: RecentlyPlayedActions) {
                 )
                 SingleLine(listOf(state.subtitle, state.album).filter { it.isNotEmpty() }.joinToString(" · "))
                 val position = DateUtils.formatElapsedTime(state.positionMs / DateUtils.SECOND_IN_MILLIS)
-                val track = stringResource(R.string.recently_played_track_position, state.index + 1, state.ids.size, position)
+                val track = stringResource(
+                    R.string.recently_played_track_position,
+                    state.index + 1,
+                    state.ids.size,
+                    position,
+                )
                 Text(
                     text = "$track · ${relativeTime(state.savedAt)}",
                     style = MaterialTheme.typography.caption,
