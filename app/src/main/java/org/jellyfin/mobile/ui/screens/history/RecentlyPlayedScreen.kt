@@ -262,6 +262,7 @@ private fun HistoryRow(entry: HistoryEntry, actions: RecentlyPlayedActions) {
                 )
                 val kind = kindLabel(entry.kind)?.let { stringResource(it) } ?: entry.kind
                 SingleLine(listOf(kind, entry.subtitle).filter { it.isNotEmpty() }.joinToString(" · "))
+                ResumeSpot(entry)
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = relativeTime(entry.playedAt), style = MaterialTheme.typography.caption)
@@ -285,6 +286,17 @@ private fun HistoryRow(entry: HistoryEntry, actions: RecentlyPlayedActions) {
             }
         }
     }
+}
+
+@Composable
+private fun ResumeSpot(entry: HistoryEntry) {
+    if (entry.resumeIndex == 0 && entry.resumePositionMs == 0L) return
+    val position = DateUtils.formatElapsedTime(entry.resumePositionMs / DateUtils.SECOND_IN_MILLIS)
+    val text = when {
+        entry.kind == "track" -> position
+        else -> stringResource(R.string.recently_played_resume_at, entry.resumeIndex + 1, position)
+    }
+    Text(text = text, style = MaterialTheme.typography.caption)
 }
 
 @Composable

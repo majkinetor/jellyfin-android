@@ -42,7 +42,10 @@ class RecentlyPlayedFragment : ComposeFragment() {
         override fun onPlay(entry: HistoryEntry) {
             // IDs are hex; anything else is not put into a script
             if (entry.id.matches(ITEM_ID)) {
-                webappFunctionChannel.call("window.ContinuePlugin && window.ContinuePlugin.playEntry('${entry.id}');")
+                val spot = with(entry) { "$resumeIndex, $resumePositionMs, $resumeDurationMs, $trackCount" }
+                webappFunctionChannel.call(
+                    "window.ContinuePlugin && window.ContinuePlugin.playEntryFrom('${entry.id}', $spot);",
+                )
             }
             close()
         }
