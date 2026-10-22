@@ -2,6 +2,8 @@
 
 Local fixes to [jellyfin-android](https://github.com/jellyfin/jellyfin-android), built and installed on the owner's phone (Honor Magic V5, MagicOS, Android 15). Some may go upstream later.
 
+**Required reading before changing anything in `jellyfin-android/`: [UPSTREAM.md](UPSTREAM.md)** (upstream's conventions, its LLM policy and how its maintainer applies it, and the PR checklist). Follow those conventions on every branch, `own/*` included, so any of it can go upstream later. Never write upstream issue or PR text for posting: the owner writes it in his own words.
+
 ## Layout
 
 | Path                | What                                                                       |
