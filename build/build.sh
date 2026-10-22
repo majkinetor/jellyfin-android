@@ -39,7 +39,11 @@ git checkout -q build
 # Version: latest upstream tag + "-local.<n>"; n counts up so each build installs over the last
 TAG="$(git tag --sort=-v:refname | grep -E '^v[0-9]+.[0-9]+.[0-9]+$' | head -1)"
 COUNTER="$BUILD/build-number"
-N=$(( $(cat "$COUNTER" 2>/dev/null || echo 0) + 1 ))
+# One above both the local counter and the fork's newest release of this tag (CI publishes releases too)
+LAST_RELEASE="$(gh release list -R majkinetor/jellyfin-android --limit 200 --json tagName --jq '.[].tagName' 2>/dev/null \
+  | sed -n "s/^${TAG//./\\.}-local\.\([0-9]*\)$/\1/p" | sort -n | tail -1)"
+LOCAL_LAST="$(cat "$COUNTER" 2>/dev/null || echo 0)"
+N=$(( (LOCAL_LAST > ${LAST_RELEASE:-0} ? LOCAL_LAST : ${LAST_RELEASE:-0}) + 1 ))
 if [ "$N" -gt 98 ]; then echo "build number would pass 98 (versionCode limit): reset $COUNTER after a new upstream tag" >&2; exit 1; fi
 VERSION="${TAG#v}-local.$N"
 

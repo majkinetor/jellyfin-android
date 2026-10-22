@@ -1,0 +1,105 @@
+name: Fork / Build
+
+# Lives on `meta`, the default branch, so the code branches stay free of fork-only files.
+# Workflows run only from the branch that holds them, so pushes to fix/* and own/* don't start this:
+# it runs daily (picking up upstream) and on demand (`gh workflow run build.yaml`).
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Publish a release even when nothing changed
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: fork-build
+
+jobs:
+  build:
+    name: Merge, check, build, release
+    runs-on: ubuntu-26.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: build
+          fetch-depth: 0
+          path: code
+      - name: Checkout meta
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: meta
+          path: meta
+      - name: Merge upstream and the fork's branches into build
+        id: merge
+        working-directory: code
+        run: bash ../meta/build/ci-merge.sh
+      - name: Decide
+        id: go
+        run: echo "go=${{ steps.merge.outputs.changed == 'true' || inputs.release == true }}" >> "$GITHUB_OUTPUT"
+      - name: Setup Java
+        if: steps.go.outputs.go == 'true'
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version-file: code/.tools-versions
+      - name: Setup Gradle
+        if: steps.go.outputs.go == 'true'
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+      - name: Upstream checks (detekt, lint, unit tests)
+        if: steps.go.outputs.go == 'true'
+        working-directory: code
+        run: ./gradlew detekt lint test
+      - name: Build the signed APK
+        if: steps.go.outputs.go == 'true'
+        working-directory: code
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          JELLYFIN_VERSION: ${{ steps.merge.outputs.version }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          KEYSTORE_FILE="$RUNNER_TEMP/release.keystore" ./gradlew assembleProprietaryRelease
+          mkdir -p ../out
+          cp app/build/outputs/apk/proprietary/release/*.apk "../out/jellyfin-$JELLYFIN_VERSION.apk"
+      - name: Push build
+        if: steps.go.outputs.go == 'true'
+        working-directory: code
+        run: git push --force origin build
+      - name: Release
+        if: steps.go.outputs.go == 'true'
+        working-directory: code
+        env:
+          VERSION: ${{ steps.merge.outputs.version }}
+        run: |
+          commit="$(git rev-parse HEAD)"
+          branches="$(git for-each-ref --format='`%(refname:lstrip=3)`' refs/remotes/origin/fix refs/remotes/origin/own | paste -sd ' ' -)"
+          cat > "$RUNNER_TEMP/notes.md" <<EOF
+          Automatic build: upstream \`master\` @ \`$(git rev-parse --short upstream/master)\` + $branches.
+
+          **Install:** this APK is signed with the fork's own key. Uninstall the official Jellyfin app first, the first time only (that removes its login and settings); later releases install over this one.
+
+          Built from [\`build\`](https://github.com/${{ github.repository }}/tree/$commit) @ \`${commit:0:8}\` by [this run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+          EOF
+          gh release create "v$VERSION" "../out/jellyfin-$VERSION.apk" --target "$commit" --title "$VERSION" --notes-file "$RUNNER_TEMP/notes.md"
+      - name: Report a failure
+        if: failure()
+        run: |
+          run="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          issue="$(gh issue list -R ${{ github.repository }} --label ci --state open --json number --jq '.[0].number')"
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" -R ${{ github.repository }} --body "Failed again: $run"
+          else
+            gh issue create -R ${{ github.repository }} --label ci --title "Fork build failed" --body "The fork's build failed: $run"
+          fi

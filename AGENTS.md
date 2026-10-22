@@ -36,6 +36,17 @@ The commit messages here keep the AI trailers. An upstream PR is made from a fre
 
 ## Building and releasing
 
+**CI** ([`.github/workflows/build.yaml`](.github/workflows/build.yaml) on `meta`, *Fork / Build*):
+- Runs daily at 04:17 UTC and on demand: `gh workflow run build.yaml -R majkinetor/jellyfin-android` (`-f release=true` to publish even when nothing changed).
+- Merges upstream `master` with every `fix/*` and `own/*` from the fork into `build` (`build/ci-merge.sh`). It never rewrites `fix/*` or `own/*`: when one stops merging, CI fails and you rebase it locally (`build.sh sync`).
+- When the merged tree changed, it runs upstream's checks (detekt, lint, tests), builds the signed APK, force-pushes `build` and publishes a release.
+- A failure opens (or comments on) an issue labelled `ci`.
+- It only lives on `meta`: GitHub runs a workflow only on pushes to the branch holding it, so pushing to `fix/*` / `own/*` doesn't start it. Start it after a push.
+- The signing key is in the fork's Actions secrets (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`), the same key as `build/jelly-local.keystore`, so CI and local builds install over each other.
+- Release numbers come from the fork's releases (`local.<n>`, one above the newest), locally too (`build.sh` takes the larger of that and `build/build-number`).
+
+**Locally:**
+
 - `bash build/check.sh [branch]`: upstream's CI checks (detekt, lint, unit tests) in Docker. Add no new detekt findings in touched files.
 - `bash build/build.sh`: builds `build` as it is. `bash build/build.sh sync`: fetches upstream, rebases all `fix/*` / `own/*` onto it, recreates `build`, then builds.
 - `bash build/release.sh "notes"`: pushes the branches and publishes the newest `out/*.apk` as a GitHub release (tag `v<version>`, on the `build` commit).
