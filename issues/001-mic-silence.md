@@ -55,3 +55,5 @@ It also logs recording, audio-mode, player and device changes under the `Jellyfi
 ## Result
 
 2026-10-22: first tests on the phone (build `2.7.3-local.1`) are positive. Resolved. Staying in daily use for a week or two before it goes upstream.
+
+Observed: using the microphone pauses the music, and it carries on once the microphone is free. This is the intended behaviour.
