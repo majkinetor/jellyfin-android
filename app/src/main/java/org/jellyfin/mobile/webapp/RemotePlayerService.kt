@@ -67,6 +67,7 @@ import org.jellyfin.mobile.utils.applyDefaultLocalAudioAttributes
 import org.jellyfin.mobile.utils.createMediaNotificationChannel
 import org.jellyfin.mobile.utils.setPlaybackState
 import org.koin.android.ext.android.inject
+import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.hours
 
@@ -125,7 +126,12 @@ class RemotePlayerService : Service(), CoroutineScope {
                     val state = extras.getInt(BluetoothHeadset.EXTRA_STATE)
                     val previousState = extras.getInt(BluetoothHeadset.EXTRA_PREVIOUS_STATE)
                     if (state == BluetoothHeadset.STATE_AUDIO_DISCONNECTED && previousState == BluetoothHeadset.STATE_AUDIO_CONNECTED) {
-                        webappFunctionChannel.callPlaybackManagerAction(PLAYBACK_MANAGER_COMMAND_PAUSE)
+                        // A headset drops its call link (SCO) after every microphone use, not only when it goes away
+                        if (microphoneWatcher?.recentlyBusy() == true) {
+                            Timber.tag("JellyfinAudio").i("bluetooth headset call link closed after microphone use")
+                        } else {
+                            webappFunctionChannel.callPlaybackManagerAction(PLAYBACK_MANAGER_COMMAND_PAUSE)
+                        }
                     }
                 }
             }
