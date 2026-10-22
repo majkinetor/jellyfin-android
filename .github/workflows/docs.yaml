@@ -1,0 +1,40 @@
+name: Fork / Docs
+
+# Regenerates, on `meta`, the docs that come from the issues:
+#   CHANGELOG.md                        the issues closed as confirmed working (build/changelog.sh)
+#   README.md, "What's different"       each released issue's first paragraph (build/differences.sh)
+on:
+  issues:
+    types: [opened, edited, closed, reopened, labeled, unlabeled]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: read
+
+concurrency:
+  group: fork-docs
+
+jobs:
+  docs:
+    name: Update CHANGELOG.md and README.md
+    runs-on: ubuntu-26.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout meta
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: meta
+      - name: Generate
+        run: |
+          bash build/changelog.sh > CHANGELOG.md
+          bash build/differences.sh README.md
+      - name: Commit when changed
+        run: |
+          git diff --quiet -- CHANGELOG.md README.md && { echo 'no change'; exit 0; }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Docs from the issues' -- CHANGELOG.md README.md
+          git pull -q --rebase origin meta
+          git push origin HEAD:meta

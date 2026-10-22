@@ -6,13 +6,33 @@ A fork of [jellyfin-android](https://github.com/jellyfin/jellyfin-android) with 
 
 ## What's different
 
-| | |
-| --- | --- |
-| **Sound after using the microphone** | The music pauses while another app uses the microphone (voice messages, dictation, recorder, calls) and continues afterwards, instead of "playing" in silence until the app is restarted. [#1](https://github.com/majkinetor/jellyfin-android/issues/1) |
-| **Albums start playing** | An album started from its cover no longer stays paused when the server is slow to answer (a sleeping disk). [#2](https://github.com/majkinetor/jellyfin-android/issues/2) |
-| **Continue where you left off** | The queue, track and position survive an app restart. Optionally they continue on their own when the app opens (*Client settings → Music player*). [#5](https://github.com/majkinetor/jellyfin-android/issues/5) |
-| **Recently played** | Albums, playlists and tracks you played, newest first, each from where you left it. In the side menu under *Favorites*. [#5](https://github.com/majkinetor/jellyfin-android/issues/5) |
-| **Diagnostic log** | *Client settings → Diagnostics*: read, copy or share the app's log without a computer. [#3](https://github.com/majkinetor/jellyfin-android/issues/3) |
+<!-- differences:start -->
+
+### [Silent playback after microphone use](https://github.com/majkinetor/jellyfin-android/issues/1)
+
+*Being tested.*
+
+**Upstream:** After another app uses the microphone (dictation, a voice message, a recorder, a call), the music keeps "playing" in silence until the app is restarted.  
+**This fork:** The music pauses while the microphone is in use and continues once it and the headphones are free. If the sound breaks anyway, the player gets it back by itself.
+
+### [Album started from its cover stays paused when server is slow](https://github.com/majkinetor/jellyfin-android/issues/2)
+
+**Upstream:** An album started from its cover stays paused when the server is slow to answer, for example while its disk spins up.  
+**This fork:** The album starts playing as soon as the server answers.
+
+### [Diagnostic log in app](https://github.com/majkinetor/jellyfin-android/issues/3)
+
+**Upstream:** The app's log can only be read with a computer.  
+**This fork:** *Client settings → Diagnostics → Diagnostic log* shows the log on the phone, with Copy and Share.
+
+### [Continue after restart, recently played list](https://github.com/majkinetor/jellyfin-android/issues/5)
+
+*Being tested.*
+
+**Upstream:** Closing the app loses the queue, the track and the position, and there is no list of what was played.  
+**This fork:** The queue continues after a restart at the same track and second, on its own if *Continue playing on reopen* is on. *Recently played* in the side menu lists albums, playlists and tracks, newest first, each starting where it was left.
+
+<!-- differences:end -->
 
 ## Installing
 

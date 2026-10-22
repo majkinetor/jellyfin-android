@@ -39,9 +39,19 @@ The commit messages here keep the AI trailers. An upstream PR is made from a fre
 ## Issues and changelog
 
 - Titles follow [Standard 1](dev/agents/STANDARDS.general.md#standard-1): they become the changelog lines verbatim.
+- **Every issue body starts with the lead paragraph**: two lines, stacked with two trailing spaces ([Standard 6](dev/agents/STANDARDS.general.md#standard-6)):
+
+  ```markdown
+  **Upstream:** what the official app does: the current state.
+  **This fork:** what this fork does instead: the new state.
+  ```
+
+  Write them as user docs ([Standard 12](dev/agents/STANDARDS.general.md#standard-12)): what the user sees, in the fewest plain words, no technical detail, no history. For a feature that is still planned, *This fork* starts with "Planned:". The README's *What's different* is generated from this paragraph, so keep it true when the work changes. Below it comes `**Branch:** … · **Reported upstream:** …`, then the details.
 - Labels: `status: open` (not started) · `status: testing` (in a build the owner is trying) · `status: done` (confirmed); `bug` (something broken, `fix/*` branch, for upstream) · `feature` (a feature of this fork, `own/*` branch) · `server` (needs the server or web client); `ci` (opened by CI).
 - **Only the owner's confirmation closes an issue.** When work is in a release, set `status: testing` and comment with what changed and the release link. When he says it works, set `status: done` and close it as completed. Don't close it before.
-- [`CHANGELOG.md`](CHANGELOG.md) is generated from those closed issues by `build/changelog.sh`. The *Fork / Changelog* workflow reruns it on every issue close, reopen, label or title change. Never edit it by hand: fix the issue (title, labels) instead.
+- Generated from the issues by the *Fork / Docs* workflow on every issue change (open, edit, close, reopen, label), never edited by hand. Fix the issue instead:
+  - [`CHANGELOG.md`](CHANGELOG.md), from the issues closed as confirmed (`build/changelog.sh`)
+  - the README's *What's different*, from the lead paragraph of every issue in a release, `status: testing` or `status: done` (`build/differences.sh`, between the `differences` markers)
 
 ## Building and releasing
 
