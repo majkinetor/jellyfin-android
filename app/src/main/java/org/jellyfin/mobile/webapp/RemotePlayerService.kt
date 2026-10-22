@@ -89,6 +89,16 @@ class RemotePlayerService : Service(), CoroutineScope {
     private var mediaController: MediaController? = null
     private var largeItemIcon: Bitmap? = null
     private var currentItemId: String? = null
+    private var isLocalPlayback = false
+    private val microphoneWatcher: MicrophoneWatcher? by lazy {
+        if (!AndroidVersion.isAtLeastO) return@lazy null
+        MicrophoneWatcher(
+            audioManager = getSystemService()!!,
+            isPlaying = { isLocalPlayback && playbackState?.state == PlaybackState.STATE_PLAYING },
+            pause = { webappFunctionChannel.callPlaybackManagerAction(PLAYBACK_MANAGER_COMMAND_PAUSE) },
+            play = { webappFunctionChannel.callPlaybackManagerAction(PLAYBACK_MANAGER_COMMAND_PLAY) },
+        )
+    }
 
     val playbackState: PlaybackState? get() = mediaSession?.controller?.playbackState
 
@@ -251,11 +261,15 @@ class RemotePlayerService : Service(), CoroutineScope {
             }
 
             setPlaybackState(!isPaused, position, canSeek)
+            isLocalPlayback = isLocalPlayer
 
             if (isLocalPlayer) {
                 mediaSession.applyDefaultLocalAudioAttributes(AudioAttributes.CONTENT_TYPE_MUSIC)
+                microphoneWatcher?.start()
+                microphoneWatcher?.onPlayerState(!isPaused)
             } else {
                 mediaSession.setPlaybackToRemote(remoteVolumeProvider)
+                microphoneWatcher?.stop()
             }
 
             val supportsNativeSeek = AndroidVersion.isAtLeastQ
@@ -490,6 +504,7 @@ class RemotePlayerService : Service(), CoroutineScope {
     }
 
     private fun onStopped() {
+        microphoneWatcher?.stop()
         notificationManager.cancel(MEDIA_PLAYER_NOTIFICATION_ID)
         mediaSession?.isActive = false
         stopWakelock()
