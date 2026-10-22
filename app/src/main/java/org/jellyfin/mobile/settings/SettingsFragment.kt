@@ -6,8 +6,11 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ScrollView
+import android.widget.TextView
 import android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import de.Maxr1998.modernpreferences.Preference
 import de.Maxr1998.modernpreferences.PreferencesAdapter
@@ -29,6 +32,7 @@ import org.jellyfin.mobile.databinding.FragmentSettingsBinding
 import org.jellyfin.mobile.downloads.DownloadMethod
 import org.jellyfin.mobile.utils.BackPressInterceptor
 import org.jellyfin.mobile.utils.Constants
+import org.jellyfin.mobile.utils.DiagnosticLog
 import org.jellyfin.mobile.utils.applyWindowInsetsAsMargins
 import org.jellyfin.mobile.utils.extensions.requireMainActivity
 import org.jellyfin.mobile.utils.isPackageInstalled
@@ -289,11 +293,54 @@ class SettingsFragment : Fragment(), BackPressInterceptor {
                 false
             }
         }
+        categoryHeader(PREF_CATEGORY_DIAGNOSTICS) {
+            title = "Diagnostics"
+        }
+        pref(PREF_DIAGNOSTIC_LOG) {
+            title = "Diagnostic log"
+            summary = "Show or share the app's log (audio, playback, web client)"
+            onClick {
+                showDiagnosticLog()
+                false
+            }
+        }
+    }
+
+    private fun showDiagnosticLog() {
+        val context = requireContext()
+        val log = DiagnosticLog.read().ifEmpty { "(empty)" }
+        @Suppress("MagicNumber")
+        val text = TextView(context).apply {
+            // The newest lines are the interesting ones
+            this.text = if (log.length > 100_000) log.takeLast(100_000) else log
+            textSize = 11f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setTextIsSelectable(true)
+            setPadding(32, 16, 32, 16)
+        }
+        val scroll = ScrollView(context).apply { addView(text) }
+        AlertDialog.Builder(context)
+            .setTitle("Diagnostic log")
+            .setView(scroll)
+            .setPositiveButton("Share") { _, _ ->
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_SUBJECT, "Jellyfin diagnostic log")
+                    putExtra(Intent.EXTRA_TEXT, DiagnosticLog.readForSharing(context))
+                }
+                startActivity(Intent.createChooser(intent, "Share log"))
+            }
+            .setNeutralButton("Clear") { _, _ -> DiagnosticLog.clear() }
+            .setNegativeButton("Close", null)
+            .show()
+        scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
     }
 
     companion object {
         const val PREF_CATEGORY_MUSIC_PLAYER = "pref_category_music"
         const val PREF_CATEGORY_VIDEO_PLAYER = "pref_category_video"
         const val PREF_CATEGORY_DOWNLOADS = "pref_category_downloads"
+        const val PREF_CATEGORY_DIAGNOSTICS = "pref_category_diagnostics"
+        const val PREF_DIAGNOSTIC_LOG = "pref_diagnostic_log"
     }
 }
