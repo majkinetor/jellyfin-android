@@ -94,7 +94,8 @@ class MicrophoneWatcher(
         audioManager.registerAudioPlaybackCallback(playbackCallback, handler)
         audioManager.registerAudioDeviceCallback(deviceCallback, handler)
         if (AndroidVersion.isAtLeastS) {
-            audioManager.addOnModeChangedListener({ handler.post(it) }, modeListener as AudioManager.OnModeChangedListener)
+            val listener = modeListener as AudioManager.OnModeChangedListener
+            audioManager.addOnModeChangedListener({ handler.post(it) }, listener)
         }
     }
 
