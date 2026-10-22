@@ -3,6 +3,8 @@
  * what was started (album, playlist, track, ...) for the app's "Recently played" screen.
  * State and history are stored by the app (NativeInterface), not in the page.
  */
+const RELOAD_KEY = 'continuePlugin.reloadForAudio';
+
 export class ContinuePlugin {
     constructor({ events, playbackManager, globalize }) {
         window['ContinuePlugin'] = this;
@@ -17,11 +19,125 @@ export class ContinuePlugin {
         // The history entry the current queue was started from; its position is kept with it
         this.currentEntry = null;
 
+        this.audioBroken = false;
+        this.audioContexts = [];
+
+        this.watchAudioContexts();
         this.wrapPlay();
+        this.wrapUnpause();
         events.on(playbackManager, 'playbackstart', () => this.save());
         setInterval(() => this.save(), 5000);
         this.addMenuLink();
-        this.restoreOnStart();
+        this.restoreAfterReload() || this.restoreOnStart();
+    }
+
+    /*
+     * The web client sends music through an AudioContext when audio normalization is on
+     * (createMediaElementSource), and from then on the <audio> element sounds only through it.
+     * When the audio device fails under it (a Bluetooth headset switching to its call link for the
+     * microphone), the context dies: the element keeps "playing" in silence, and nothing but a new
+     * page brings sound back. So: notice the failure, and on the next play reload the page and
+     * continue at the same spot.
+     */
+    watchAudioContexts() {
+        const Original = window.AudioContext;
+        if (!Original || Original.continuePluginWatched) return;
+        const plugin = this;
+        class WatchedAudioContext extends Original {
+            constructor(...args) {
+                super(...args);
+                plugin.audioContexts.push(this);
+                this.addEventListener('error', () => plugin.onAudioBroken('error event'));
+                this.addEventListener('statechange', () => {
+                    plugin.log('audio context', this.state);
+                    if (this.state === 'closed') plugin.onAudioBroken('closed');
+                });
+            }
+        }
+        WatchedAudioContext.continuePluginWatched = true;
+        window.AudioContext = WatchedAudioContext;
+    }
+
+    onAudioBroken(reason) {
+        if (this.audioBroken) return;
+        this.log('audio output broke:', reason);
+        this.audioBroken = true;
+        const playbackManager = this.playbackManager;
+        // Playing right now: recover at once; paused: on the next play
+        if (playbackManager.isPlaying() && !playbackManager.paused()) this.reloadAndContinue();
+    }
+
+    wrapUnpause() {
+        const playbackManager = this.playbackManager;
+        for (const name of ['unpause', 'playPause']) {
+            const original = playbackManager[name];
+            playbackManager[name] = (...args) => {
+                if (this.audioBroken && (name === 'unpause' || playbackManager.paused())) {
+                    this.reloadAndContinue();
+                    return undefined;
+                }
+                const result = original.apply(playbackManager, args);
+                setTimeout(() => this.checkAudioRunning(), 1500);
+                return result;
+            };
+        }
+    }
+
+    /** After a play: an audio context that doesn't run again means the output is gone. */
+    async checkAudioRunning() {
+        const playbackManager = this.playbackManager;
+        if (this.audioBroken || !playbackManager.isPlaying() || playbackManager.paused()) return;
+        for (const context of this.audioContexts) {
+            if (context.state === 'running' || context.state === 'closed') continue;
+            this.log('audio context', context.state, 'while playing, resuming it');
+            try {
+                await context.resume();
+            } catch (e) {
+                this.log('audio context resume failed', e);
+            }
+            if (context.state !== 'running') this.onAudioBroken(`still ${context.state} while playing`);
+        }
+    }
+
+    async reloadAndContinue() {
+        if (this.reloading) return;
+        this.reloading = true;
+        this.log('reloading the web client to get sound back');
+        try {
+            this.lastSaved = '';
+            await this.save();
+            sessionStorage.setItem(RELOAD_KEY, '1');
+        } catch (e) {
+            this.log('could not save before reload', e);
+        }
+        window.location.reload();
+    }
+
+    /** After a reload for broken audio: continue playing, whatever the reopen setting says. */
+    restoreAfterReload() {
+        let pending = false;
+        try {
+            pending = sessionStorage.getItem(RELOAD_KEY) === '1';
+            sessionStorage.removeItem(RELOAD_KEY);
+        } catch (e) {
+            return false;
+        }
+        if (!pending) return false;
+        this.log('continuing after reload');
+        this.whenSignedIn(() => this.resume(false));
+        return true;
+    }
+
+    async whenSignedIn(action) {
+        // Wait for a signed-in client; give up after a minute
+        for (let i = 0; i < 120; i++) {
+            const apiClient = window.ApiClient;
+            if (apiClient && apiClient.getCurrentUserId() && apiClient.accessToken()) {
+                await action();
+                return;
+            }
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
     }
 
     log(...args) {
@@ -137,20 +253,14 @@ export class ContinuePlugin {
         window.NativeInterface.saveContinueState(json);
     }
 
-    async restoreOnStart() {
+    restoreOnStart() {
         if (!window.NativeInterface.getContinueOnReopen()) return;
-        // Wait for a signed-in client; give up after a minute
-        for (let i = 0; i < 120; i++) {
-            const apiClient = window.ApiClient;
-            if (apiClient && apiClient.getCurrentUserId() && apiClient.accessToken()) {
-                if (!this.playbackManager.isPlaying()) {
-                    this.log('continuing on reopen');
-                    await this.resume(false);
-                }
-                return;
+        this.whenSignedIn(async () => {
+            if (!this.playbackManager.isPlaying()) {
+                this.log('continuing on reopen');
+                await this.resume(false);
             }
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
+        });
     }
 
     /**
