@@ -1,5 +1,7 @@
 package org.jellyfin.mobile.settings
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
@@ -8,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -30,6 +33,7 @@ import org.jellyfin.mobile.app.AppPreferences
 import org.jellyfin.mobile.app.StorageManager
 import org.jellyfin.mobile.databinding.FragmentSettingsBinding
 import org.jellyfin.mobile.downloads.DownloadMethod
+import org.jellyfin.mobile.utils.AndroidVersion
 import org.jellyfin.mobile.utils.BackPressInterceptor
 import org.jellyfin.mobile.utils.Constants
 import org.jellyfin.mobile.utils.DiagnosticLog
@@ -331,7 +335,12 @@ class SettingsFragment : Fragment(), BackPressInterceptor {
                 startActivity(Intent.createChooser(intent, "Share log"))
             }
             .setNeutralButton("Clear") { _, _ -> DiagnosticLog.clear() }
-            .setNegativeButton("Close", null)
+            .setNegativeButton("Copy") { _, _ ->
+                val clipboard = context.getSystemService(ClipboardManager::class.java)
+                clipboard.setPrimaryClip(ClipData.newPlainText("Jellyfin diagnostic log", DiagnosticLog.readForSharing(context)))
+                // Android 13+ confirms a copy itself
+                if (!AndroidVersion.isAtLeastT) Toast.makeText(context, "Log copied", Toast.LENGTH_SHORT).show()
+            }
             .show()
         scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
     }
