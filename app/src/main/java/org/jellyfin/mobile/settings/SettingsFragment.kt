@@ -308,8 +308,8 @@ class SettingsFragment : Fragment(), BackPressInterceptor {
 
     companion object {
         const val PREF_CATEGORY_MUSIC_PLAYER = "pref_category_music"
+        const val PREF_RECENTLY_PLAYED = "pref_recently_played"
         const val PREF_CATEGORY_VIDEO_PLAYER = "pref_category_video"
         const val PREF_CATEGORY_DOWNLOADS = "pref_category_downloads"
-        const val PREF_RECENTLY_PLAYED = "pref_recently_played"
     }
 }
