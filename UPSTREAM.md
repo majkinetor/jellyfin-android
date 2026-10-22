@@ -27,8 +27,8 @@ What the policy requires:
 
 ## Repo conventions
 
-- **CI on every PR**: `./gradlew detekt lint` (App / Lint) and the unit tests (App / Test). Both must pass. Run them in Docker before proposing anything (`build/build.sh` builds only; see CLAUDE.md for the check command).
-- **Style**: `.editorconfig`: 4 spaces, max **140** columns, final newline, **no wildcard imports**. Kotlin official style, imports sorted alphabetically with Android/AndroidX/Kotlin/third-party/`org.jellyfin` mixed in one sorted block (as the existing files do).
+- **CI on every PR**: `./gradlew detekt lint` (App / Lint) and the unit tests (App / Test). Both must pass. detekt only *reports*: upstream already has ~100 findings, and the build stays green. Still, **add no new findings**: compare against the files you touched. Run `bash build/check.sh [branch]` (Docker) before proposing anything.
+- **Style**: `.editorconfig`: 4 spaces, max 140 columns, but **detekt flags anything over 120**, so keep lines ≤ 120; final newline, **no wildcard imports**. Kotlin official style, imports sorted alphabetically with Android/AndroidX/Kotlin/third-party/`org.jellyfin` mixed in one sorted block (as the existing files do).
 - **detekt** (`detekt.yaml`): complexity, magic numbers, long methods, swallowed exceptions are flagged. Use `@Suppress("…")` only where the existing code does the same.
 - **No hard-coded user-facing text.** Every label goes into `app/src/main/res/values/strings.xml` and only there. Translations come from Weblate, so never edit `values-*/`. Settings use `titleRes` / `summaryRes`.
 - **Logging** with Timber. **DI** with Koin (`AppModule.kt`). **UI**: settings with Maxr1998 modernpreferences, new screens in Compose Material (1), as `ComposeFragment` + screen composable, like Downloads.

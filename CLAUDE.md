@@ -24,6 +24,7 @@ New issue: add `issues/NNN-slug.md`, branch `fix/<slug>` from `upstream/master`,
 
 ## Building
 
+- `bash build/check.sh [branch]`: upstream's CI checks (detekt, lint, unit tests) in Docker; see [UPSTREAM.md](UPSTREAM.md).
 - `bash build/build.sh`: builds `build` as is. `bash build/build.sh sync`: fetches upstream, rebases all `fix/*` / `own/*` on it, recreates `build`, then builds.
 - No local JDK or Android SDK: everything runs in Docker (`jf-android-build` image, Gradle cache in volume `jf-gradle-cache`). The first build takes about 6 minutes.
 - Output: `out/jellyfin-<tag>-local.<n>.apk`, the proprietary release flavor, app ID `org.jellyfin.mobile`, signed with `build/jelly-local.keystore`.

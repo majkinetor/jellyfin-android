@@ -17,5 +17,5 @@ Open issues are listed in the order they will be worked on.
 | 1   | [Silent "playing" after microphone use](001-mic-silence.md)              | done    | fix/mic-silence     |
 | 2   | [Album from thumbnail stays paused](002-autoplay-paused.md)              | done    | fix/autoplay-paused |
 | 3   | [Diagnostic log in the app](003-diagnostic-log.md)                       | done    | own/diagnostic-log  |
-| 5   | [Continue where I left off; recently played](005-continue-listening.md) | open    | —                   |
+| 5   | [Continue where I left off; recently played](005-continue-listening.md) | testing | own/continue-listening |
 | 4   | [File system playlist support](004-filesystem-playlists.md)              | open    | — (server / web)    |

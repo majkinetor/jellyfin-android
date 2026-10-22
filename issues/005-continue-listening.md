@@ -1,8 +1,8 @@
 ---
 id: 5
 title: Continue where I left off; recently played, newest first
-status: open
-branch: none yet
+status: testing
+branch: own/continue-listening
 upstream: not reported yet
 created: 2026-10-22
 ---
@@ -38,3 +38,17 @@ Comes before #4.
 
 1. Build 1 + 2 in the app: save the queue, restore it on reopen, add the setting. Check with the diagnostic log that a killed app (swipe away, then reopen) comes back at the right track and position.
 2. Build the history and a *Recently played* screen in the app, opened from the web client's side menu. *Continue* (the saved queue) sits at the top.
+
+## Built (2026-10-22, `own/continue-listening`)
+
+- `assets/native/ContinuePlugin.js`, a web client plugin like the app's others:
+  - wraps `playbackManager.play()` to record what was started
+  - saves the queue (item IDs, index, position, repeat) every 5 s while music plays
+  - restores it on reopen when the setting is on
+  - adds *Recently played* (the web client's own translated label) to the side menu: in the legacy drawer's custom-links container, and after *Favorites* in the modern (MUI) drawer
+- `history/PlayHistory.kt`: history (newest first, one row per item, at most 300) and the saved queue, in the app's own preferences.
+- `NativeInterface`: `recordPlayed`, `saveContinueState`, `getContinueState`, `getContinueOnReopen`, `openRecentlyPlayed`.
+- *Recently played* screen (Compose, like Downloads): *Continue* card on top (track n of m, position, when), filters *All / Albums / Playlists / Tracks / Other*, tap to play, long-press to play or remove, menu *Clear history*. Also reachable from *Client settings → Music player*.
+- Setting *Continue playing on reopen* (off by default).
+- The history starts empty: only what is played from this build on is in it.
+- 2.7.3-local.3: the menu link was missing; this server uses the modern layout, which has no custom-links container. Fixed in local.4.
