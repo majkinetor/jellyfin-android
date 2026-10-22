@@ -1,0 +1,3 @@
+jellyfin-android/
+out/
+build/*.keystore
