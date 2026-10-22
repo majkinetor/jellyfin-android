@@ -19,6 +19,11 @@ data class HistoryEntry(
     val imageId: String = "",
     val serverId: String = "",
     val playedAt: Long = 0,
+    /** Where playback of this entry was last: track index in its queue, position and track length. */
+    val resumeIndex: Int = 0,
+    val resumePositionMs: Long = 0,
+    val resumeDurationMs: Long = 0,
+    val trackCount: Int = 0,
 )
 
 /** The queue that was playing, to continue it after a restart. */
@@ -34,6 +39,8 @@ data class ContinueState(
     val album: String = "",
     val imageId: String = "",
     val savedAt: Long = 0,
+    val durationMs: Long = 0,
+    val entryId: String? = null,
 )
 
 /**
@@ -61,8 +68,17 @@ class PlayHistory(context: Context) {
             Timber.e(e, "Invalid history entry")
             return
         }
-        // Newest first, one row per item
-        val entries = listOf(entry) + _entries.value.filterNot { it.id == entry.id }
+        // Newest first, one row per item; a replayed entry keeps its saved spot until playback moves it
+        val previous = _entries.value.find { it.id == entry.id }
+        val merged = previous?.let {
+            entry.copy(
+                resumeIndex = it.resumeIndex,
+                resumePositionMs = it.resumePositionMs,
+                resumeDurationMs = it.resumeDurationMs,
+                trackCount = it.trackCount,
+            )
+        } ?: entry
+        val entries = listOf(merged) + _entries.value.filterNot { it.id == entry.id }
         save(entries.take(MAX_ENTRIES))
     }
 
@@ -81,6 +97,21 @@ class PlayHistory(context: Context) {
         }
         preferences.edit { putString(KEY_CONTINUE, stateJson) }
         _continueState.value = state
+        if (state.entryId != null) updatePosition(state)
+    }
+
+    @Synchronized
+    private fun updatePosition(state: ContinueState) {
+        val entries = _entries.value.map { entry ->
+            if (entry.id != state.entryId) return@map entry
+            entry.copy(
+                resumeIndex = state.index,
+                resumePositionMs = state.positionMs,
+                resumeDurationMs = state.durationMs,
+                trackCount = state.ids.size,
+            )
+        }
+        if (entries != _entries.value) save(entries)
     }
 
     private fun save(entries: List<HistoryEntry>) {

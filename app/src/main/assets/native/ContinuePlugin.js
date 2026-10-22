@@ -14,6 +14,8 @@ export class ContinuePlugin {
         this.globalize = globalize;
         this.restoring = false;
         this.lastSaved = '';
+        // The history entry the current queue was started from; its position is kept with it
+        this.currentEntry = null;
 
         this.wrapPlay();
         events.on(playbackManager, 'playbackstart', () => this.save());
@@ -48,6 +50,7 @@ export class ContinuePlugin {
         if (!items || !items.length) return;
 
         const entry = this.entryFor(items, options.startIndex || 0);
+        this.currentEntry = entry && { id: entry.id, kind: entry.kind };
         if (entry) {
             window.NativeInterface.recordPlayed(JSON.stringify(entry));
         }
@@ -109,11 +112,16 @@ export class ContinuePlugin {
         const index = playbackManager.getCurrentPlaylistIndex(player);
         if (!ids.length || index < 0) return;
 
+        // A single track entry only owns the position while that track plays
+        const entry = this.currentEntry;
+        const ownsQueue = entry && (entry.kind !== 'track' || current.Id === entry.id);
         const state = {
             serverId: current.ServerId || window.ApiClient.serverId(),
             ids,
             index: Math.min(index, ids.length - 1),
             positionMs: Math.floor(playbackManager.currentTime(player) || 0),
+            durationMs: current.RunTimeTicks ? Math.floor(current.RunTimeTicks / 10000) : 0,
+            entryId: ownsQueue ? entry.id : null,
             repeat: playbackManager.getRepeatMode(player),
             name: current.Name || '',
             subtitle: current.AlbumArtist || (current.Artists || []).join(', ') || '',
@@ -145,6 +153,18 @@ export class ContinuePlugin {
         }
     }
 
+    /**
+     * Where to start from a saved spot. A spot in the last seconds of a track means the track was done:
+     * starting there asks the server for a stream piece past the end (HTTP 400). Start the next track
+     * instead, or from the top when it was the last one.
+     */
+    startPoint(index, positionMs, durationMs, count) {
+        if (durationMs && positionMs > durationMs - 5000) {
+            return index + 1 < count ? { index: index + 1, positionMs: 0 } : { index: 0, positionMs: 0 };
+        }
+        return { index, positionMs };
+    }
+
     /** Plays the saved queue at its track and position. Called by the app too. */
     async resume(fullscreen = false) {
         const json = window.NativeInterface.getContinueState();
@@ -153,6 +173,15 @@ export class ContinuePlugin {
         const apiClient = window.ApiClient;
         if (!apiClient || state.serverId !== apiClient.serverId()) {
             this.log('saved queue belongs to another server');
+            return;
+        }
+        const start = this.startPoint(state.index, state.positionMs || 0, state.durationMs, state.ids.length);
+
+        // Started from an album, playlist or track: play it the way the web client does
+        if (state.entryId) {
+            this.log('resuming', state.entryId, 'at', start.index, start.positionMs, 'ms');
+            await this.playEntry(state.entryId, start.index, start.positionMs, fullscreen);
+            if (state.repeat) this.playbackManager.setRepeatMode(state.repeat);
             return;
         }
 
@@ -175,16 +204,16 @@ export class ContinuePlugin {
             state.ids.forEach((id, i) => {
                 const item = byId.get(id);
                 if (!item) return;
-                if (i === state.index) startIndex = items.length;
+                if (i === start.index) startIndex = items.length;
                 items.push(item);
             });
             if (!items.length) return;
 
-            this.log('resuming', items.length, 'items at', startIndex, state.positionMs, 'ms');
+            this.log('resuming', items.length, 'items at', startIndex, start.positionMs, 'ms');
             await this.playbackManager.play({
                 items,
                 startIndex,
-                startPositionTicks: (state.positionMs || 0) * 10000,
+                startPositionTicks: start.positionMs * 10000,
                 fullscreen
             });
             if (state.repeat) this.playbackManager.setRepeatMode(state.repeat);
@@ -195,10 +224,30 @@ export class ContinuePlugin {
         }
     }
 
-    /** Plays a history entry (by item ID). Called by the app's "Recently played" screen. */
-    async playEntry(id) {
+    /**
+     * Plays a history entry (by item ID) from a track index and position.
+     * Called by the app's "Recently played" screen, with the entry's saved spot.
+     */
+    async playEntry(id, index = 0, positionMs = 0, fullscreen = true) {
         const apiClient = window.ApiClient;
-        await this.playbackManager.play({ ids: [id], serverId: apiClient.serverId() });
+        try {
+            await this.playbackManager.play({
+                ids: [id],
+                serverId: apiClient.serverId(),
+                startIndex: index || 0,
+                startPositionTicks: (positionMs || 0) * 10000,
+                fullscreen
+            });
+        } catch (e) {
+            this.log('play failed', e);
+        }
+    }
+
+    /** Plays a history entry from its saved spot, skipping a finished track. */
+    playEntryFrom(id, index, positionMs, durationMs, count) {
+        const start = this.startPoint(index, positionMs, durationMs, count || index + 1);
+        this.log('playing', id, 'at', start.index, start.positionMs, 'ms');
+        return this.playEntry(id, start.index, start.positionMs);
     }
 
     // "Recently played" in the side menu, for both layouts of the web client

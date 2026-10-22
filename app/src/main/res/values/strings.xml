@@ -107,6 +107,7 @@
     <string name="recently_played_clear_confirm">Clear</string>
     <string name="recently_played_empty">Nothing played yet</string>
     <string name="recently_played_empty_filter">Nothing of this kind played yet</string>
+    <string name="recently_played_resume_at">Track %1$d · %2$s</string>
     <string name="recently_played_track_position">Track %1$d of %2$d · %3$s</string>
     <string name="recently_played_filter_all">All</string>
     <string name="recently_played_filter_albums">Albums</string>
