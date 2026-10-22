@@ -2,7 +2,7 @@
 
 A fork of [jellyfin-android](https://github.com/jellyfin/jellyfin-android) with fixes and additions for music listening. It is a personal build, used daily on an Android 15 phone, and shared as is. It is not an official Jellyfin release.
 
-**Download:** the newest APK under [Releases](https://github.com/majkinetor/jellyfin-android/releases).
+**Download:** the newest APK under [Releases](https://github.com/majkinetor/jellyfin-android/releases). What changed: [CHANGELOG.md](CHANGELOG.md).
 
 ## What's different
 

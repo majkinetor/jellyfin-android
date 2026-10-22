@@ -1,0 +1,35 @@
+name: Fork / Changelog
+
+# Regenerates CHANGELOG.md on `meta` from the issues closed as confirmed working (build/changelog.sh).
+on:
+  issues:
+    types: [closed, reopened, labeled, unlabeled, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: read
+
+concurrency:
+  group: fork-changelog
+
+jobs:
+  changelog:
+    name: Update CHANGELOG.md
+    runs-on: ubuntu-26.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout meta
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: meta
+      - name: Generate
+        run: bash build/changelog.sh > CHANGELOG.md
+      - name: Commit when changed
+        run: |
+          git diff --quiet -- CHANGELOG.md && { echo 'no change'; exit 0; }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Changelog from the confirmed issues' -- CHANGELOG.md
+          git push origin HEAD:meta
