@@ -35,6 +35,9 @@ class MicrophoneWatcher(
     private var busy = false
     private var pausedByUs = false
     private var pausedAt = 0L
+    private var busySince = 0L
+    private var wasPlaying = false
+    private var stoppedPlayingAt = 0L
 
     private val recordingCallback = object : AudioManager.AudioRecordingCallback() {
         override fun onRecordingConfigChanged(configs: MutableList<AudioRecordingConfiguration>) {
@@ -56,7 +59,7 @@ class MicrophoneWatcher(
 
     private val playbackCallback = object : AudioManager.AudioPlaybackCallback() {
         override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>) {
-            Timber.tag(TAG).i("players: %s", configs.joinToString { it.toString() })
+            Timber.tag(TAG).i("players: %s", configs.map { usageName(it.audioAttributes.usage) })
         }
     }
 
@@ -113,7 +116,19 @@ class MicrophoneWatcher(
      * (after our own pause has settled) is the user's choice, so we no longer resume on our own.
      */
     fun onPlayerState(playing: Boolean) {
-        if (playing && pausedByUs && SystemClock.elapsedRealtime() - pausedAt > PAUSE_SETTLE_MS) {
+        val now = SystemClock.elapsedRealtime()
+        if (wasPlaying && !playing) {
+            stoppedPlayingAt = now
+            // The pause was reported just after the microphone was taken: the WebView paused
+            // by itself on the recorder's audio focus request, so it is still ours to resume.
+            if (busy && !pausedByUs && now - busySince < FOCUS_PAUSE_WINDOW_MS) {
+                Timber.tag(TAG).i("paused by the system as the microphone was taken")
+                pausedByUs = true
+                pausedAt = now
+            }
+        }
+        wasPlaying = playing
+        if (playing && pausedByUs && now - pausedAt > PAUSE_SETTLE_MS) {
             Timber.tag(TAG).i("user resumed while microphone busy")
             pausedByUs = false
             handler.removeCallbacks(resumeRunnable)
@@ -127,12 +142,20 @@ class MicrophoneWatcher(
         if (nowBusy == busy) return
         busy = nowBusy
         if (busy) {
+            val now = SystemClock.elapsedRealtime()
+            busySince = now
             handler.removeCallbacks(resumeRunnable)
             if (isPlaying()) {
                 Timber.tag(TAG).i("microphone in use, pausing")
                 pausedByUs = true
-                pausedAt = SystemClock.elapsedRealtime()
+                pausedAt = now
                 pause()
+            } else if (!pausedByUs && now - stoppedPlayingAt < FOCUS_PAUSE_WINDOW_MS) {
+                // A recorder asks for audio focus before it opens the microphone; the WebView
+                // pauses on that a moment earlier. Resume afterwards as if we had paused.
+                Timber.tag(TAG).i("microphone in use, already paused by the system %d ms ago", now - stoppedPlayingAt)
+                pausedByUs = true
+                pausedAt = stoppedPlayingAt
             }
         } else if (pausedByUs) {
             // Keep the player paused long enough for the WebView to close its audio stream
@@ -141,6 +164,18 @@ class MicrophoneWatcher(
             Timber.tag(TAG).i("microphone free, resuming in %d ms", delay)
             handler.postDelayed(resumeRunnable, delay)
         }
+    }
+
+    private fun usageName(usage: Int) = when (usage) {
+        android.media.AudioAttributes.USAGE_MEDIA -> "media"
+        android.media.AudioAttributes.USAGE_GAME -> "game"
+        android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION -> "voice"
+        android.media.AudioAttributes.USAGE_NOTIFICATION -> "notification"
+        android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE -> "ringtone"
+        android.media.AudioAttributes.USAGE_ALARM -> "alarm"
+        android.media.AudioAttributes.USAGE_ASSISTANCE_SONIFICATION -> "sonification"
+        android.media.AudioAttributes.USAGE_ASSISTANT -> "assistant"
+        else -> usage.toString()
     }
 
     private fun modeName(mode: Int) = when (mode) {
@@ -157,5 +192,6 @@ class MicrophoneWatcher(
         private const val PAUSE_SETTLE_MS = 2000L
         private const val RESUME_DELAY_MS = 1000L
         private const val MIN_PAUSE_MS = 6000L
+        private const val FOCUS_PAUSE_WINDOW_MS = 1500L
     }
 }
