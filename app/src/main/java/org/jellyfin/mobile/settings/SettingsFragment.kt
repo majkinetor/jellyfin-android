@@ -27,9 +27,11 @@ import org.jellyfin.mobile.app.AppPreferences
 import org.jellyfin.mobile.app.StorageManager
 import org.jellyfin.mobile.databinding.FragmentSettingsBinding
 import org.jellyfin.mobile.downloads.DownloadMethod
+import org.jellyfin.mobile.history.RecentlyPlayedFragment
 import org.jellyfin.mobile.utils.BackPressInterceptor
 import org.jellyfin.mobile.utils.Constants
 import org.jellyfin.mobile.utils.applyWindowInsetsAsMargins
+import org.jellyfin.mobile.utils.extensions.addFragment
 import org.jellyfin.mobile.utils.extensions.requireMainActivity
 import org.jellyfin.mobile.utils.isPackageInstalled
 import org.jellyfin.mobile.utils.withThemedContext
@@ -105,6 +107,14 @@ class SettingsFragment : Fragment(), BackPressInterceptor {
             titleRes = R.string.pref_continue_on_reopen_title
             summaryRes = R.string.pref_continue_on_reopen_summary_off
             summaryOnRes = R.string.pref_continue_on_reopen_summary_on
+        }
+        pref(PREF_RECENTLY_PLAYED) {
+            titleRes = R.string.recently_played
+            summaryRes = R.string.pref_recently_played_summary
+            onClick {
+                parentFragmentManager.addFragment<RecentlyPlayedFragment>()
+                false
+            }
         }
         categoryHeader(PREF_CATEGORY_VIDEO_PLAYER) {
             titleRes = R.string.pref_category_video_player
@@ -300,5 +310,6 @@ class SettingsFragment : Fragment(), BackPressInterceptor {
         const val PREF_CATEGORY_MUSIC_PLAYER = "pref_category_music"
         const val PREF_CATEGORY_VIDEO_PLAYER = "pref_category_video"
         const val PREF_CATEGORY_DOWNLOADS = "pref_category_downloads"
+        const val PREF_RECENTLY_PLAYED = "pref_recently_played"
     }
 }

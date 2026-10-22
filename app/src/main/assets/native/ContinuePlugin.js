@@ -201,9 +201,17 @@ export class ContinuePlugin {
         await this.playbackManager.play({ ids: [id], serverId: apiClient.serverId() });
     }
 
-    // "Recently played" in the side menu, next to the server's custom links
+    // "Recently played" in the side menu, for both layouts of the web client
     addMenuLink() {
-        const add = () => {
+        const label = this.globalize.translate('HeaderRecentlyPlayed');
+        const open = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.NativeInterface.openRecentlyPlayed();
+        };
+
+        // Legacy layout: the drawer has a container for custom links
+        const addLegacy = () => {
             const container = document.querySelector('.customMenuOptions');
             if (!container || container.querySelector('.lnkRecentlyPlayed')) return;
             const link = document.createElement('a');
@@ -211,12 +219,33 @@ export class ContinuePlugin {
             link.className = 'navMenuOption lnkMediaFolder lnkRecentlyPlayed';
             link.href = '#';
             link.innerHTML = '<span class="material-icons navMenuOptionIcon history" aria-hidden="true"></span>'
-                + `<span class="navMenuOptionText">${this.globalize.translate('HeaderRecentlyPlayed')}</span>`;
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.NativeInterface.openRecentlyPlayed();
-            });
+                + '<span class="navMenuOptionText"></span>';
+            link.querySelector('.navMenuOptionText').textContent = label;
+            link.addEventListener('click', open);
             container.insertBefore(link, container.firstChild);
+        };
+
+        // Modern layout (MUI drawer): a copy of the Favorites entry, placed after it
+        const addModern = () => {
+            const favorites = document.querySelector('a[href$="/home?tab=1"]');
+            const item = favorites && favorites.closest('li');
+            if (!item || !item.parentElement || item.parentElement.querySelector('.lnkRecentlyPlayed')) return;
+            const copy = item.cloneNode(true);
+            copy.classList.add('lnkRecentlyPlayed');
+            const link = copy.querySelector('a');
+            link.removeAttribute('href');
+            link.classList.remove('Mui-selected');
+            link.addEventListener('click', open);
+            const text = copy.querySelector('.MuiListItemText-primary') || copy.querySelector('.MuiTypography-root');
+            if (text) text.textContent = label;
+            const icon = copy.querySelector('.MuiListItemIcon-root');
+            if (icon) icon.innerHTML = '<span class="material-icons" aria-hidden="true">history</span>';
+            item.after(copy);
+        };
+
+        const add = () => {
+            addLegacy();
+            addModern();
         };
         new MutationObserver(add).observe(document.body, { childList: true, subtree: true });
         add();
