@@ -18,7 +18,7 @@ Merged, **with AI assistance disclosed**, which shows AI help itself is not the 
 
 What the policy requires:
 
-1. **The PR text and every comment are the contributor's own words.** LLM output is not allowed in "direct communication" (issues, PRs, review replies). Agents in this folder never write upstream PR or issue text for posting. The `issues/*.md` here are notes the owner rewrites in his own words before posting anything.
+1. **The PR text and every comment are the contributor's own words.** LLM output is not allowed in "direct communication" (issues, PRs, review replies). Agents in this folder never write upstream PR or issue text for posting. The fork's issues are notes for this fork; anything that goes to upstream is rewritten by the owner in his own words first.
 2. **Commits are authored by the contributor.** No `Co-Authored-By: Claude`, no `Claude-Session:` lines and no tool metafiles in an upstream PR. These trailers stay on our local commits. A PR goes from a **fresh branch** the owner makes: squashed, his authorship, his message.
 3. **Honest disclosure goes in the template's *Code assistance* section**, in his words. It is not hidden.
 4. **He must understand and be able to explain every line**, and handle review comments himself.
