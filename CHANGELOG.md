@@ -6,10 +6,7 @@ Generated from the [closed issues](https://github.com/majkinetor/jellyfin-androi
 
 ## 2026-10-22
 
-### Fixes
+### Other
 
 1. Album started from its cover stays paused when server is slow ([#2](https://github.com/majkinetor/jellyfin-android/issues/2))
-
-### Features
-
-1. Diagnostic log in app ([#3](https://github.com/majkinetor/jellyfin-android/issues/3))
+2. Diagnostic log in app ([#3](https://github.com/majkinetor/jellyfin-android/issues/3))
