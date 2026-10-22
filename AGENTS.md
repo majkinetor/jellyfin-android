@@ -13,7 +13,7 @@ Fixes and additions to [jellyfin-android](https://github.com/jellyfin/jellyfin-a
 
 | What                 | Where |
 | -------------------- | ----- |
-| issues (the tracker) | [the fork's GitHub issues](https://github.com/majkinetor/jellyfin-android/issues); labels `status: open/testing/done`, `kind: fix/own/server` |
+| issues (the tracker) | [the fork's GitHub issues](https://github.com/majkinetor/jellyfin-android/issues); labels `status: open/testing/done`, `bug` / `feature` / `server` |
 | builds               | [the fork's GitHub releases](https://github.com/majkinetor/jellyfin-android/releases), one per build |
 | this folder          | `C:\Work\jelly`, pushed as the fork's **`meta`** branch (its own history, nothing shared with the code) |
 | the code             | `jellyfin-android/` here (ignored by `meta`), a clone with remotes `upstream` (jellyfin) and `origin` (the fork) |
@@ -39,7 +39,7 @@ The commit messages here keep the AI trailers. An upstream PR is made from a fre
 ## Issues and changelog
 
 - Titles follow [Standard 1](dev/agents/STANDARDS.general.md#standard-1): they become the changelog lines verbatim.
-- Labels: `status: open` (not started) · `status: testing` (in a build the owner is trying) · `status: done` (confirmed); `kind: fix` (a bug, for upstream) · `kind: own` (a feature of this fork) · `kind: server` (needs the server or web client); `ci` (opened by CI).
+- Labels: `status: open` (not started) · `status: testing` (in a build the owner is trying) · `status: done` (confirmed); `bug` (something broken, `fix/*` branch, for upstream) · `feature` (a feature of this fork, `own/*` branch) · `server` (needs the server or web client); `ci` (opened by CI).
 - **Only the owner's confirmation closes an issue.** When work is in a release, set `status: testing` and comment with what changed and the release link. When he says it works, set `status: done` and close it as completed. Don't close it before.
 - [`CHANGELOG.md`](CHANGELOG.md) is generated from those closed issues by `build/changelog.sh`. The *Fork / Changelog* workflow reruns it on every issue close, reopen, label or title change. Never edit it by hand: fix the issue (title, labels) instead.
 
