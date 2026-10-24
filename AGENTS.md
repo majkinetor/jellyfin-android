@@ -15,7 +15,7 @@ Fixes and additions to [jellyfin-android](https://github.com/jellyfin/jellyfin-a
 | -------------------- | ----- |
 | issues (the tracker) | [the fork's GitHub issues](https://github.com/majkinetor/jellyfin-android/issues); labels `status: open/testing/done`, `bug` / `feature` / `server` |
 | builds               | [the fork's GitHub releases](https://github.com/majkinetor/jellyfin-android/releases), one per build |
-| this folder          | `C:\Work\jelly`, pushed as the fork's **`meta`** branch (its own history, nothing shared with the code) |
+| this folder          | `C:\ai\jelly`, pushed as the fork's **`meta`** branch (its own history, nothing shared with the code) |
 | the code             | `jellyfin-android/` here (ignored by `meta`), a clone with remotes `upstream` (jellyfin) and `origin` (the fork) |
 | build tooling        | `build/`: `Dockerfile` (JDK 21 + Android SDK), `build.sh`, `check.sh`, `release.sh`; the keystore and build counter stay local |
 | built APKs           | `out/` (local) |
@@ -78,7 +78,7 @@ The commit messages here keep the AI trailers. An upstream PR is made from a fre
 
 ## Differences from the general rules
 
-- **Bot identity** ([Standard 7](dev/agents/STANDARDS.general.md#standard-7)): the bot is **`claude-ai-milic`**, a collaborator on the fork (write). Its token is in `dev/.github-credentials.json` here (gitignored). Commit as `claude-ai-milic <287434337+claude-ai-milic@users.noreply.github.com>`. CI posts as `github-actions[bot]`.
+- **Bot identity** ([Standard 7](dev/agents/STANDARDS.general.md#standard-7)): the bot is **`claude-ai-milic`**, a collaborator on the fork (write). Its token is in the hub's `C:\ai\_hub\.github-credentials.json` (never copied here). Commit as `claude-ai-milic <287434337+claude-ai-milic@users.noreply.github.com>`. CI posts as `github-actions[bot]`.
 - **Scripts are bash, not PowerShell** ([Standard 3](dev/agents/STANDARDS.general.md#standard-3)): `build/*.sh` run in Docker and on GitHub's Linux runners, and locally through Git Bash.
 - **Branches** ([Standard 13](dev/agents/STANDARDS.general.md#standard-13)): no work on `master` (it mirrors upstream); every change goes on a `fix/*` or `own/*` branch, merged into `build` (see [Branches](#branches-in-jellyfin-android-all-pushed-to-origin)).
 - **The model + effort footer** goes on every GitHub post here too: `<sub>Claude Opus 5.5 · effort: <label> (<value>)</sub>`, label from the value (5 low, 10 medium, 15 high, 40 extra, max is max).
