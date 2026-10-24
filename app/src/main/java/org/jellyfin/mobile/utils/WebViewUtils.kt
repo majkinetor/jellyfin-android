@@ -73,6 +73,10 @@ fun WebSettings.applyDefault() {
     javaScriptEnabled = true
     domStorageEnabled = true
     setSupportMultipleWindows(true)
+    // The web client calls play() only after the server answers the playback request. When that takes longer
+    // than the browser's user-activation window (a slow or spun-down drive), play() is rejected as autoplay
+    // and the player silently stays paused.
+    mediaPlaybackRequiresUserGesture = false
 }
 
 /**
