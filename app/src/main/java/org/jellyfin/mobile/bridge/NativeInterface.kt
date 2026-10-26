@@ -16,8 +16,10 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import org.jellyfin.mobile.BuildConfig
+import org.jellyfin.mobile.app.AppPreferences
 import org.jellyfin.mobile.events.ActivityEvent
 import org.jellyfin.mobile.events.ActivityEventHandler
+import org.jellyfin.mobile.history.PlayHistory
 import org.jellyfin.mobile.player.deviceprofile.DeviceProfileBuilder
 import org.jellyfin.mobile.utils.Constants
 import org.jellyfin.mobile.utils.Constants.EXTRA_ALBUM
@@ -48,6 +50,8 @@ class NativeInterface(private val context: Context) : KoinComponent {
     private val activityEventHandler: ActivityEventHandler = get()
     private val remoteVolumeProvider: RemoteVolumeProvider by inject()
     private val deviceProfileBuilder: DeviceProfileBuilder by inject()
+    private val playHistory: PlayHistory by inject()
+    private val appPreferences: AppPreferences by inject()
 
     @SuppressLint("HardwareIds")
     @JavascriptInterface
@@ -166,6 +170,27 @@ class NativeInterface(private val context: Context) : KoinComponent {
     @JavascriptInterface
     fun openDownloadManager() {
         emitEvent(ActivityEvent.OpenDownloads)
+    }
+
+    @JavascriptInterface
+    fun recordPlayed(entry: String) {
+        playHistory.record(entry)
+    }
+
+    @JavascriptInterface
+    fun saveContinueState(state: String) {
+        playHistory.saveContinueState(state)
+    }
+
+    @JavascriptInterface
+    fun getContinueState(): String? = playHistory.continueStateJson
+
+    @JavascriptInterface
+    fun getContinueOnReopen(): Boolean = appPreferences.continueOnReopen
+
+    @JavascriptInterface
+    fun openRecentlyPlayed() {
+        emitEvent(ActivityEvent.OpenRecentlyPlayed)
     }
 
     @JavascriptInterface

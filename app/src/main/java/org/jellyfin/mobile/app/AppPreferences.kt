@@ -92,6 +92,9 @@ class AppPreferences(context: Context) {
     val musicNotificationAlwaysDismissible: Boolean
         get() = sharedPreferences.getBoolean(Constants.PREF_MUSIC_NOTIFICATION_ALWAYS_DISMISSIBLE, false)
 
+    val continueOnReopen: Boolean
+        get() = sharedPreferences.getBoolean(Constants.PREF_CONTINUE_ON_REOPEN, false)
+
     @VideoPlayerType
     val videoPlayerType: String
         get() = sharedPreferences.getString(Constants.PREF_VIDEO_PLAYER_TYPE, VideoPlayerType.EXO_PLAYER)!!
