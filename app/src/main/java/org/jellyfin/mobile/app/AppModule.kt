@@ -35,6 +35,7 @@ import org.jellyfin.mobile.downloads.DownloadQueue
 import org.jellyfin.mobile.downloads.DownloadsViewModel
 import org.jellyfin.mobile.downloads.FileDownloader
 import org.jellyfin.mobile.events.ActivityEventHandler
+import org.jellyfin.mobile.history.PlayHistory
 import org.jellyfin.mobile.player.deviceprofile.DeviceProfileBuilder
 import org.jellyfin.mobile.player.interaction.PlayerEvent
 import org.jellyfin.mobile.player.mediasegments.MediaSegmentRepository
@@ -63,6 +64,7 @@ private const val TS_SEARCH_PACKETS = 1800
 
 val applicationModule = module {
     single { AppPreferences(androidApplication()) }
+    single { PlayHistory(androidApplication()) }
     single { OkHttpClient() }
     single { ImageLoader(androidApplication()) }
     single { PermissionRequestHelper() }
