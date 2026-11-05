@@ -28,6 +28,7 @@ import kotlinx.coroutines.channels.Channel
 import okhttp3.OkHttpClient
 import org.jellyfin.mobile.MainViewModel
 import org.jellyfin.mobile.bridge.MediaSegments
+import org.jellyfin.mobile.bridge.NativeAudioPlayer
 import org.jellyfin.mobile.bridge.NativePlayer
 import org.jellyfin.mobile.downloads.DownloadManager
 import org.jellyfin.mobile.downloads.DownloadNotificationManager
@@ -81,6 +82,7 @@ val applicationModule = module {
     // Bridge interfaces
     single { NativePlayer(get(), get(), get(named(PLAYER_EVENT_CHANNEL))) }
     single { MediaSegments(get()) }
+    single { NativeAudioPlayer(androidApplication(), get(), get(), get()) }
 
     // ViewModels
     viewModel { MainViewModel(get(), get()) }

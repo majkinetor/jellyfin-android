@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.mobile.MainActivity
 import org.jellyfin.mobile.R
 import org.jellyfin.mobile.app.AppPreferences
+import org.jellyfin.mobile.bridge.NativeAudioPlayer
 import org.jellyfin.mobile.utils.AndroidVersion
 import org.jellyfin.mobile.utils.Constants
 import org.jellyfin.mobile.utils.Constants.EXTRA_ALBUM
@@ -83,6 +84,7 @@ class RemotePlayerService : Service(), CoroutineScope {
     private val binder = ServiceBinder(this)
     private val webappFunctionChannel: WebappFunctionChannel by inject()
     private val remoteVolumeProvider: RemoteVolumeProvider by inject()
+    private val nativeAudioPlayer: NativeAudioPlayer by inject()
     private lateinit var wakeLock: PowerManager.WakeLock
 
     private var mediaSession: MediaSession? = null
@@ -114,6 +116,8 @@ class RemotePlayerService : Service(), CoroutineScope {
                     val extras = intent.extras ?: return
                     val state = extras.getInt(BluetoothHeadset.EXTRA_STATE)
                     val previousState = extras.getInt(BluetoothHeadset.EXTRA_PREVIOUS_STATE)
+                    // The native music player pauses and resumes around calls on its own
+                    if (nativeAudioPlayer.isActive) return
                     if (state == BluetoothHeadset.STATE_AUDIO_DISCONNECTED && previousState == BluetoothHeadset.STATE_AUDIO_CONNECTED) {
                         webappFunctionChannel.callPlaybackManagerAction(PLAYBACK_MANAGER_COMMAND_PAUSE)
                     }

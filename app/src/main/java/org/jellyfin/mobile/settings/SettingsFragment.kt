@@ -101,6 +101,11 @@ class SettingsFragment : Fragment(), BackPressInterceptor {
             summaryRes = R.string.pref_music_notification_always_dismissible_summary_off
             summaryOnRes = R.string.pref_music_notification_always_dismissible_summary_on
         }
+        checkBox(Constants.PREF_MUSIC_NATIVE_PLAYER) {
+            titleRes = R.string.pref_music_native_player_title
+            summaryRes = R.string.pref_music_native_player_summary
+            defaultValue = true
+        }
         categoryHeader(PREF_CATEGORY_VIDEO_PLAYER) {
             titleRes = R.string.pref_category_video_player
         }
