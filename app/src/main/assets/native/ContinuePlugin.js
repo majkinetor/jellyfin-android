@@ -4,6 +4,7 @@
  * State and history are stored by the app (NativeInterface), not in the page.
  */
 const RELOAD_KEY = 'continuePlugin.reloadForAudio';
+const RESUME_ERROR_WINDOW_MS = 60000;
 
 export class ContinuePlugin {
     constructor({ events, playbackManager, globalize }) {
@@ -26,6 +27,7 @@ export class ContinuePlugin {
         this.wrapPlay();
         this.wrapUnpause();
         events.on(playbackManager, 'playbackstart', () => this.save());
+        events.on(playbackManager, 'playbackerror', () => this.onResumeError());
         setInterval(() => this.save(), 5000);
         this.addMenuLink();
         this.restoreAfterReload() || this.restoreOnStart();
@@ -290,6 +292,7 @@ export class ContinuePlugin {
         // Started from an album, playlist or track: play it the way the web client does
         if (state.entryId) {
             this.log('resuming', state.entryId, 'at', start.index, start.positionMs, 'ms');
+            this.lastResume = { entryId: state.entryId, index: start.index, positionMs: start.positionMs, count: state.ids.length, at: Date.now() };
             await this.playEntry(state.entryId, start.index, start.positionMs, fullscreen);
             if (state.repeat) this.playbackManager.setRepeatMode(state.repeat);
             return;
@@ -332,6 +335,19 @@ export class ContinuePlugin {
         } finally {
             this.restoring = false;
         }
+    }
+
+    /**
+     * A resume from the middle of a track that the server refuses (HTTP 400 for a stream piece):
+     * start the next track instead, once.
+     */
+    onResumeError() {
+        const last = this.lastResume;
+        this.lastResume = null;
+        if (!last || !last.positionMs || Date.now() - last.at > RESUME_ERROR_WINDOW_MS) return;
+        const index = last.index + 1 < last.count ? last.index + 1 : 0;
+        this.log('resume failed to play, starting', last.entryId, 'at', index);
+        this.playEntry(last.entryId, index, 0, false);
     }
 
     /**
