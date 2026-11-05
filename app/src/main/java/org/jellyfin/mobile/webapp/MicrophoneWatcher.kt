@@ -241,6 +241,6 @@ class MicrophoneWatcher(
         private const val SETTLE_MS = 1000L
         private const val MAX_WAIT_MS = 15_000L
         private const val RECENTLY_BUSY_MS = 20_000L
-        private const val FOCUS_PAUSE_WINDOW_MS = 1500L
+        private const val FOCUS_PAUSE_WINDOW_MS = 5000L
     }
 }
