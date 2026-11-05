@@ -89,11 +89,11 @@ class AppPreferences(context: Context) {
         )!!
         set(value) = sharedPreferences.edit { putString(Constants.PREF_MEDIA_SEGMENT_ACTIONS, value) }
 
-    val musicNotificationAlwaysDismissible: Boolean
-        get() = sharedPreferences.getBoolean(Constants.PREF_MUSIC_NOTIFICATION_ALWAYS_DISMISSIBLE, false)
-
     val musicNativePlayer: Boolean
         get() = sharedPreferences.getBoolean(Constants.PREF_MUSIC_NATIVE_PLAYER, true)
+
+    val musicNotificationAlwaysDismissible: Boolean
+        get() = sharedPreferences.getBoolean(Constants.PREF_MUSIC_NOTIFICATION_ALWAYS_DISMISSIBLE, false)
 
     @VideoPlayerType
     val videoPlayerType: String
