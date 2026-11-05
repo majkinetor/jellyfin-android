@@ -32,6 +32,13 @@ A fork of [jellyfin-android](https://github.com/jellyfin/jellyfin-android) with 
 **Upstream:** Closing the app loses the queue, the track and the position, and there is no list of what was played.  
 **This fork:** The queue continues after a restart at the same track and second, on its own if *Continue playing on reopen* is on. *Recently played* in the side menu lists albums, playlists and tracks, newest first, each starting where it was left.
 
+### [Music with the native player](https://github.com/majkinetor/jellyfin-android/issues/8)
+
+*Being tested.*
+
+**Upstream:** music plays in the web page inside the app, so after a call it can stay paused, take long to resume, or go silent.  
+**This fork:** music plays with the app's own player, which pauses for a call and resumes right after it.
+
 <!-- differences:end -->
 
 ## Installing
