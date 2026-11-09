@@ -28,6 +28,7 @@ import kotlinx.coroutines.channels.Channel
 import okhttp3.OkHttpClient
 import org.jellyfin.mobile.MainViewModel
 import org.jellyfin.mobile.bridge.MediaSegments
+import org.jellyfin.mobile.bridge.NativeAudioPlayer
 import org.jellyfin.mobile.bridge.NativePlayer
 import org.jellyfin.mobile.downloads.DownloadManager
 import org.jellyfin.mobile.downloads.DownloadNotificationManager
@@ -35,6 +36,7 @@ import org.jellyfin.mobile.downloads.DownloadQueue
 import org.jellyfin.mobile.downloads.DownloadsViewModel
 import org.jellyfin.mobile.downloads.FileDownloader
 import org.jellyfin.mobile.events.ActivityEventHandler
+import org.jellyfin.mobile.history.PlayHistory
 import org.jellyfin.mobile.player.deviceprofile.DeviceProfileBuilder
 import org.jellyfin.mobile.player.interaction.PlayerEvent
 import org.jellyfin.mobile.player.mediasegments.MediaSegmentRepository
@@ -63,6 +65,7 @@ private const val TS_SEARCH_PACKETS = 1800
 
 val applicationModule = module {
     single { AppPreferences(androidApplication()) }
+    single { PlayHistory(androidApplication()) }
     single { OkHttpClient() }
     single { ImageLoader(androidApplication()) }
     single { PermissionRequestHelper() }
@@ -81,6 +84,7 @@ val applicationModule = module {
     // Bridge interfaces
     single { NativePlayer(get(), get(), get(named(PLAYER_EVENT_CHANNEL))) }
     single { MediaSegments(get()) }
+    single { NativeAudioPlayer(androidApplication(), get(), get(), get()) }
 
     // ViewModels
     viewModel { MainViewModel(get(), get()) }

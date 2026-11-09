@@ -29,6 +29,7 @@ import org.jellyfin.mobile.app.AppPreferences
 import org.jellyfin.mobile.bridge.ExternalPlayer
 import org.jellyfin.mobile.bridge.MediaSegments
 import org.jellyfin.mobile.bridge.NativeInterface
+import org.jellyfin.mobile.bridge.NativeAudioPlayer
 import org.jellyfin.mobile.bridge.NativePlayer
 import org.jellyfin.mobile.data.entity.ServerEntity
 import org.jellyfin.mobile.databinding.FragmentWebviewBinding
@@ -56,6 +57,7 @@ class WebViewFragment : Fragment(), BackPressInterceptor, JellyfinWebChromeClien
     private lateinit var assetsPathHandler: AssetsPathHandler
     private lateinit var jellyfinWebViewClient: JellyfinWebViewClient
     private val nativePlayer: NativePlayer by inject()
+    private val nativeAudioPlayer: NativeAudioPlayer by inject()
     private lateinit var externalPlayer: ExternalPlayer
     private val mediaSegments: MediaSegments by inject()
 
@@ -187,6 +189,7 @@ class WebViewFragment : Fragment(), BackPressInterceptor, JellyfinWebChromeClien
         settings.applyDefault()
         addJavascriptInterface(NativeInterface(requireContext()), "NativeInterface")
         addJavascriptInterface(nativePlayer, "NativePlayer")
+        addJavascriptInterface(nativeAudioPlayer, "NativeAudioPlayer")
         addJavascriptInterface(externalPlayer, "ExternalPlayer")
         addJavascriptInterface(mediaSegments, "MediaSegments")
 
