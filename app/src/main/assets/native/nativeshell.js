@@ -19,8 +19,10 @@ const features = [
 const plugins = [
     'NavigationPlugin',
     'ExoPlayerPlugin',
+    'NativeAudioPlugin',
     'ExternalPlayerPlugin',
-    'MediaSegmentsPlugin'
+    'MediaSegmentsPlugin',
+    'ContinuePlugin'
 ];
 
 // Add plugin loaders
