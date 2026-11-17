@@ -15,6 +15,7 @@ import org.jellyfin.mobile.MainActivity
 import org.jellyfin.mobile.R
 import org.jellyfin.mobile.bridge.JavascriptCallback
 import org.jellyfin.mobile.downloads.DownloadsFragment
+import org.jellyfin.mobile.history.RecentlyPlayedFragment
 import org.jellyfin.mobile.player.ui.PlayerFragment
 import org.jellyfin.mobile.player.ui.PlayerFullscreenHelper
 import org.jellyfin.mobile.settings.SettingsFragment
@@ -82,6 +83,9 @@ class ActivityEventHandler(
             }
             ActivityEvent.OpenDownloads -> {
                 supportFragmentManager.addFragment<DownloadsFragment>()
+            }
+            ActivityEvent.OpenRecentlyPlayed -> {
+                supportFragmentManager.addFragment<RecentlyPlayedFragment>()
             }
             is ActivityEvent.CastMessage -> {
                 val action = event.action
