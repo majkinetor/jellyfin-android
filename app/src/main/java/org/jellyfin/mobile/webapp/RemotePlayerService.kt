@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.mobile.MainActivity
 import org.jellyfin.mobile.R
 import org.jellyfin.mobile.app.AppPreferences
+import org.jellyfin.mobile.bridge.NativeAudioPlayer
 import org.jellyfin.mobile.utils.AndroidVersion
 import org.jellyfin.mobile.utils.Constants
 import org.jellyfin.mobile.utils.Constants.EXTRA_ALBUM
@@ -67,6 +68,7 @@ import org.jellyfin.mobile.utils.applyDefaultLocalAudioAttributes
 import org.jellyfin.mobile.utils.createMediaNotificationChannel
 import org.jellyfin.mobile.utils.setPlaybackState
 import org.koin.android.ext.android.inject
+import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.hours
 
@@ -83,12 +85,23 @@ class RemotePlayerService : Service(), CoroutineScope {
     private val binder = ServiceBinder(this)
     private val webappFunctionChannel: WebappFunctionChannel by inject()
     private val remoteVolumeProvider: RemoteVolumeProvider by inject()
+    private val nativeAudioPlayer: NativeAudioPlayer by inject()
     private lateinit var wakeLock: PowerManager.WakeLock
 
     private var mediaSession: MediaSession? = null
     private var mediaController: MediaController? = null
     private var largeItemIcon: Bitmap? = null
     private var currentItemId: String? = null
+    private var isLocalPlayback = false
+    private val microphoneWatcher: MicrophoneWatcher? by lazy {
+        if (!AndroidVersion.isAtLeastO) return@lazy null
+        MicrophoneWatcher(
+            audioManager = getSystemService()!!,
+            isPlaying = { isLocalPlayback && playbackState?.state == PlaybackState.STATE_PLAYING },
+            pause = { webappFunctionChannel.callPlaybackManagerAction(PLAYBACK_MANAGER_COMMAND_PAUSE) },
+            play = { webappFunctionChannel.callPlaybackManagerAction(PLAYBACK_MANAGER_COMMAND_PLAY) },
+        )
+    }
 
     val playbackState: PlaybackState? get() = mediaSession?.controller?.playbackState
 
@@ -114,8 +127,15 @@ class RemotePlayerService : Service(), CoroutineScope {
                     val extras = intent.extras ?: return
                     val state = extras.getInt(BluetoothHeadset.EXTRA_STATE)
                     val previousState = extras.getInt(BluetoothHeadset.EXTRA_PREVIOUS_STATE)
+                    // The native music player pauses and resumes around calls on its own
+                    if (nativeAudioPlayer.isActive) return
                     if (state == BluetoothHeadset.STATE_AUDIO_DISCONNECTED && previousState == BluetoothHeadset.STATE_AUDIO_CONNECTED) {
-                        webappFunctionChannel.callPlaybackManagerAction(PLAYBACK_MANAGER_COMMAND_PAUSE)
+                        // A headset drops its call link (SCO) after every microphone use, not only when it goes away
+                        if (microphoneWatcher?.recentlyBusy() == true) {
+                            Timber.tag("JellyfinAudio").i("bluetooth headset call link closed after microphone use")
+                        } else {
+                            webappFunctionChannel.callPlaybackManagerAction(PLAYBACK_MANAGER_COMMAND_PAUSE)
+                        }
                     }
                 }
             }
@@ -251,11 +271,15 @@ class RemotePlayerService : Service(), CoroutineScope {
             }
 
             setPlaybackState(!isPaused, position, canSeek)
+            isLocalPlayback = isLocalPlayer
 
             if (isLocalPlayer) {
                 mediaSession.applyDefaultLocalAudioAttributes(AudioAttributes.CONTENT_TYPE_MUSIC)
+                microphoneWatcher?.start()
+                microphoneWatcher?.onPlayerState(!isPaused)
             } else {
                 mediaSession.setPlaybackToRemote(remoteVolumeProvider)
+                microphoneWatcher?.stop()
             }
 
             val supportsNativeSeek = AndroidVersion.isAtLeastQ
@@ -490,6 +514,7 @@ class RemotePlayerService : Service(), CoroutineScope {
     }
 
     private fun onStopped() {
+        microphoneWatcher?.stop()
         notificationManager.cancel(MEDIA_PLAYER_NOTIFICATION_ID)
         mediaSession?.isActive = false
         stopWakelock()
